@@ -13,7 +13,7 @@ const dadosPaciente = {
   nome: 'Luana Silva',
   tipoConta: 'Conta de Cliente',
   email: 'luana@email.com',
-  telefone: '(11) 98765-4321',
+  telefone: '(81) 98765-4321',
   dataNascimento: '15/04/1995',
   cpf: '155.558.344-77',
   endereco: 'Boa Viagem, Recife - PE',
