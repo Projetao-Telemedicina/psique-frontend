@@ -83,7 +83,7 @@ function Login() {
                                 Entrar
                             </button>
                             <p className="signup-text text-rich-black text-[clamp(0.875rem,1.8vh,1rem)]">
-                                Não possui conta? <a href="/register" className="text-navy font-bold hover:underline">Cadastre-se</a>
+                                Não possui conta? <a href="/cadastro" className="text-navy font-bold hover:underline">Cadastre-se</a>
                             </p>
                         </footer>
                     </form>
