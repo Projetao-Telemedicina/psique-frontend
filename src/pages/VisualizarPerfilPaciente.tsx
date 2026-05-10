@@ -135,7 +135,7 @@ function IconeUsuario({ size = 32, color = 'white' }: { size?: number; color?: s
   )
 }
 
-// SVG da logo Psique (borboleta/pássaro estilizado)
+// SVG da logo Psique 
 function LogoPsique() {
   return (
     <img
@@ -959,23 +959,35 @@ function Sidebar({ navigate, itemAtivo }: { navigate: (path: string) => void; it
       <button
         onClick={() => navigate('/login')}
         style={{
-          marginTop: 'auto',
-          marginBottom: '24px',
-          width: '100%',
+          width: '164px',
+          height: '53px',
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'center',
           gap: '10px',
-          padding: '9px 22px',
+          marginTop: 'auto',
+          marginBottom: '24px',
+          marginLeft: '16px',
           background: 'none',
           border: 'none',
-          color: 'rgba(255,255,255,0.72)',
-          fontSize: '13px',
           cursor: 'pointer',
-          textAlign: 'left',
         }}
       >
-        <IconeSair size={16} color="rgba(255,255,255,0.72)" />
-        <span>Sair da conta</span>
+        {/* Ícone de saída */}
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M16.875 30.375C16.875 30.6734 16.7565 30.9595 16.5455 31.1705C16.3345 31.3815 16.0484 31.5 15.75 31.5H6.75C6.45163 31.5 6.16548 31.3815 5.95451 31.1705C5.74353 30.9595 5.625 30.6734 5.625 30.375V5.625C5.625 5.32663 5.74353 5.04048 5.95451 4.82951C6.16548 4.61853 6.45163 4.5 6.75 4.5H15.75C16.0484 4.5 16.3345 4.61853 16.5455 4.82951C16.7565 5.04048 16.875 5.32663 16.875 5.625C16.875 5.92337 16.7565 6.20952 16.5455 6.42049C16.3345 6.63147 16.0484 6.75 15.75 6.75H7.875V29.25H15.75C16.0484 29.25 16.3345 29.3685 16.5455 29.5795C16.7565 29.7905 16.875 30.0766 16.875 30.375ZM32.2959 17.2041L26.6709 11.5791C26.4598 11.368 26.1735 11.2494 25.875 11.2494C25.5765 11.2494 25.2902 11.368 25.0791 11.5791C24.868 11.7902 24.7494 12.0765 24.7494 12.375C24.7494 12.6735 24.868 12.9598 25.0791 13.1709L28.7845 16.875H15.75C15.4516 16.875 15.1655 16.9935 14.9545 17.2045C14.7435 17.4155 14.625 17.7016 14.625 18C14.625 18.2984 14.7435 18.5845 14.9545 18.7955C15.1655 19.0065 15.4516 19.125 15.75 19.125H28.7845L25.0791 22.8291C24.868 23.0402 24.7494 23.3265 24.7494 23.625C24.7494 23.9235 24.868 24.2098 25.0791 24.4209C25.2902 24.632 25.5765 24.7506 25.875 24.7506C26.1735 24.7506 26.4598 24.632 26.6709 24.4209L32.2959 18.7959C32.4005 18.6915 32.4835 18.5674 32.5401 18.4308C32.5967 18.2942 32.6259 18.1478 32.6259 18C32.6259 17.8522 32.5967 17.7058 32.5401 17.5692C32.4835 17.4326 32.4005 17.3085 32.2959 17.2041Z" fill="white" />
+        </svg>
+
+        {/* Texto "Sair da conta" */}
+        <span style={{
+          color: 'white',
+          fontFamily: 'Poppins',
+          fontSize: '16px',
+          fontStyle: 'normal',
+          fontWeight: '700',
+          lineHeight: '14px',
+          textDecoration: 'none',
+        }}>Sair da conta</span>
       </button>
     </aside>
   )
