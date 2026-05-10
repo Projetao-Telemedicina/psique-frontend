@@ -127,17 +127,17 @@ export default function DeletarConta() {
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F0F4F8' }}>
 
       {/* SIDEBAR — igual ao padrão do projeto */}
-          <aside
-          style={{
-            width: '281px',
-            height: '930px',
-            background: 'linear-gradient(359deg, #3599D8 -50.97%, #5BB38A 99.09%)',
-            display: 'flex',
-            flexDirection: 'column',
-            paddingTop: '28px',
-            flexShrink: 0,
-          }}
-        >
+      <aside
+        style={{
+          width: '281px',
+          height: '930px',
+          background: 'linear-gradient(359deg, #3599D8 -50.97%, #5BB38A 99.09%)',
+          display: 'flex',
+          flexDirection: 'column',
+          paddingTop: '28px',
+          flexShrink: 0,
+        }}
+      >
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', marginBottom: '32px', padding: '0 12px' }}>
           <LogoPsique />
         </div>
@@ -146,14 +146,28 @@ export default function DeletarConta() {
           <button
             onClick={() => navigate(caminhoPerfilVoltar)}
             style={{
-              width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
-              padding: '9px 12px', background: 'rgba(255,255,255,0.20)',
-              border: 'none', borderRadius: '8px',
-              color: 'white', fontSize: '13px', fontWeight: '600',
-              cursor: 'pointer', textAlign: 'left',
+              width: '207px',
+              height: '53px',
+
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+
+              padding: '0 20px',
+
+              background: '#ECECEC',
+              border: '1px solid #A7A7A7',
+              borderRadius: '26px',
+
+              color: '#4B5563',
+              fontSize: '16px',
+              fontWeight: '500',
+
+              cursor: 'pointer',
+              textAlign: 'left',
             }}
           >
-            <IconePerfil size={17} color="white" />
+            <IconePerfil size={20} color="#4B5563" />
             <span>Perfil</span>
           </button>
         </nav>
