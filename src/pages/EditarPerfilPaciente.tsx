@@ -174,9 +174,14 @@ export default function EditarPerfilPaciente() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F0F4F8' }}>
 
-      <Sidebar role="paciente" navigate={navigate} itemAtivo="perfil" />
+      <main style={{ flex: 1, overflowY: 'auto', position: 'relative', display: 'flex', flexDirection: 'row' }}>
 
-      <main style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+        {/* SIDEBAR */}
+        <Sidebar role="paciente" navigate={navigate} itemAtivo="perfil" />
+
+
+
+        <div style={{ flex: 1, overflowY: 'auto', position: 'relative', display: 'flex', flexDirection: 'column' }}>
 
         {/* TOPBAR */}
         <div style={{
@@ -212,6 +217,8 @@ export default function EditarPerfilPaciente() {
             }}>Clique no lápis para editar cada informação.</p>
           </div>
         </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', position: 'relative', display: 'flex', flexDirection: 'row' }}>
 
         <div style={{ padding: '24px 32px' }}>
 
@@ -314,6 +321,8 @@ export default function EditarPerfilPaciente() {
                 </button>
               </div>
             </div>
+          </div>
+          </div>
           </div>
         </div>
       </main>

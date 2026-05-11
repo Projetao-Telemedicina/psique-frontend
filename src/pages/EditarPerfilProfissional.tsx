@@ -177,9 +177,15 @@ export default function EditarPerfilProfissional() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F0F4F8' }}>
 
-      <Sidebar role="profissional" navigate={navigate} itemAtivo="perfil" atendimentoAtivo={atendimentoativotemporario} />
+      <main style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'row' }}>
 
-      <main style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+        <Sidebar role="profissional"
+        navigate={navigate}
+        itemAtivo="perfil"
+        atendimentoAtivo={atendimentoativotemporario}
+      />
+
+      <div style={{ flex: 1, overflowY: 'auto', position: 'relative', display: 'flex', flexDirection: 'column' }}>
 
         {/* TOPBAR */}
         <div style={{
@@ -215,6 +221,8 @@ export default function EditarPerfilProfissional() {
             }}>Clique no lápis para editar cada informação.</p>
           </div>
         </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', position: 'relative', display: 'flex', flexDirection: 'row' }}>
 
         <div style={{ padding: '24px 32px' }}>
 
@@ -342,6 +350,8 @@ export default function EditarPerfilProfissional() {
                 </button>
               </div>
             </div>
+          </div>
+          </div>
           </div>
         </div>
       </main>

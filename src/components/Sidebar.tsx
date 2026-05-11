@@ -76,7 +76,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role, itemAtivo, navigate, atendiment
     <aside
       style={{
         width: '281px',
-        height: '100vh',
+        height: '100%',
         background: 'linear-gradient(359deg, #3599D8 -50.97%, #5BB38A 99.09%)',
         display: 'flex',
         flexDirection: 'column',
@@ -107,11 +107,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role, itemAtivo, navigate, atendiment
           alt="Logo Psique"
           style={{ width: '220px', height: '180px', objectFit: 'contain' }}
         />
-        {role !== 'paciente' && (
-          <span style={{ color: 'white', fontSize: '18px', fontWeight: '600', letterSpacing: '0.3px', marginTop: '-20px' }}>
-            Psique
-          </span>
-        )}
+        
       </div>
 
       {/* --- Navegação --- */}

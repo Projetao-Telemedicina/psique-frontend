@@ -53,13 +53,17 @@ export default function VisualizarPerfilProfissional() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F0F4F8' }}>
-      <Sidebar role="profissional"
+      
+      <main style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'row' }}>
+
+        <Sidebar role="profissional"
         navigate={navigate}
         itemAtivo="perfil"
         atendimentoAtivo={dadosProfissional.atendimentoAtivo}
       />
 
-      <main style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, overflowY: 'auto', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+
         {/* TOPBAR */}
         <div style={{
           display: 'flex',
@@ -91,6 +95,8 @@ export default function VisualizarPerfilProfissional() {
             }}>Gerencie suas informações pessoais.</p>
           </div>
         </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', position: 'relative', display: 'flex', flexDirection: 'row' }}>
 
         {/* CORPO */}
         <div style={{ padding: '24px 32px', flex: 1 }}>
@@ -459,6 +465,8 @@ export default function VisualizarPerfilProfissional() {
               </div>
             )}
           </div>
+        </div>
+        </div>
         </div>
       </main>
     </div>

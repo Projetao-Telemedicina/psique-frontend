@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Bell, Eye, Check, X, FileText, ChevronLeft } from 'lucide-react';
+import { Search, Bell, Eye, Check, X, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar.tsx';
 
@@ -11,6 +11,8 @@ function ValidacaoCadastro() {
         { id: 2, nome: "Carlos Almeida", crp: "04/654321", tempo: "3 dias", ativo: false },
         { id: 3, nome: "Aisha Rahman", crp: "05/987654", tempo: "5 dias", ativo: false },
     ];
+
+
 
     return (
         <main className="flex h-screen w-full overflow-hidden bg-[#F8FAFC]">
@@ -40,11 +42,14 @@ function ValidacaoCadastro() {
                 </header>
 
                 <div className="flex flex-1 overflow-hidden p-6 gap-6">
-                    <aside className="w-80 flex flex-col gap-4 overflow-y-auto">
-                        <div className="flex items-center justify-between px-2">
+                    <aside className="w-80 flex flex-col h-full">
+                        {/* Cabeçalho Fixo - Fora do scroll */}
+                        <div className="flex items-center justify-between px-2 mb-4 shrink-0">
                             <h2 className="font-bold text-slate-700">Pendentes de Análise</h2>
-                            <span className="bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">3</span>
+                            <span className="bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">3</span>
                         </div>
+
+                        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar flex flex-col gap-3">
 
                         {solicitacoes.map((s) => (
                             <div
@@ -67,30 +72,32 @@ function ValidacaoCadastro() {
                                 </div>
                             </div>
                         ))}
+                        </div>
                     </aside>
 
-                    <article className="flex-1 bg-white rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col overflow-hidden">
-                        {/* Banner do Perfil */}
-                        <div className="p-8 border-b border-slate-50 flex justify-between items-start">
-                            <div className="flex gap-6 items-center">
-                                <div className="w-20 h-24 rounded-xl bg-slate-200 overflow-hidden shadow-inner">
+                    <article className="flex-1 bg-white rounded-[2rem] shadow-sm border border-slate-100 flex flex-col overflow-hidden">
+                        <div className="p-6 border-b border-slate-50 flex justify-between items-start">
+                            <div className="flex gap-5 items-center">
+                                <div className="w-16 h-20 rounded-xl bg-slate-200 overflow-hidden shadow-inner flex-shrink-0">
                                     <img src="https://i.pravatar.cc/150?u=1" alt="Luana" className="w-full h-full object-cover" />
                                 </div>
                                 <div>
-                                    <h2 className="text-3xl font-bold text-slate-800">Luana Silva</h2>
-                                    <p className="text-sky font-medium">Candidata a Psicóloga Clínica</p>
+                                    <h2 className="text-2xl font-bold text-slate-800 leading-tight">Luana Silva</h2>
+                                    <p className="text-sky font-medium text-sm">Candidata a Psicóloga Clínica</p>
                                 </div>
                             </div>
                             <div className="text-right">
-                                <p className="font-bold text-slate-700">Solicitação #1042</p>
-                                <p className="text-xs text-slate-400">12 de Nov, 2023 - 14:30</p>
+                                <p className="font-bold text-slate-700 text-sm">Solicitação #1042</p>
+                                <p className="text-[10px] text-slate-400 font-medium">12 de Nov, 2023 - 14:30</p>
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-8">
-                            <section className="mb-10">
-                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Dados Cadastrais</h3>
-                                <div className="grid grid-cols-2 gap-y-6 gap-x-12">
+                        <div className="flex-1 overflow-y-auto p-6">
+                            <section className="mb-8">
+                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">
+                                    Dados Cadastrais
+                                </h3>
+                                <div className="grid grid-cols-2 gap-y-5 gap-x-8">
                                     <DataField label="Nome Completo" value="Luana de Fátima Silva" />
                                     <DataField label="E-mail Pessoal" value="luana.silva@email.com" />
                                     <DataField label="CRP (Registro Profissional)" value="06/123456" />
@@ -101,25 +108,26 @@ function ValidacaoCadastro() {
                             </section>
 
                             <section>
-                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Documentos Anexados para Verificação</h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <DocCard title="Comprovante_CRP.jpg" size="1.1 MB" type="Verificação Obrigatória" icon={<FileText className="text-blue-500" />} />
+                                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Documentos Anexados</h3>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <DocCard title="Comprovante_CRP.jpg" size="1.1 MB" type="Obrigatório" icon={<FileText className="text-blue-500" />} />
                                     <DocCard title="Diploma_Mestrado.pdf" size="2.4 MB" type="Opcional" icon={<FileText className="text-red-500" />} />
-                                    <DocCard title="Doc_Identidade.pdf" size="1.8 MB" type="Verificação Obrigatória" icon={<FileText className="text-red-500" />} />
+                                    <DocCard title="Doc_Identidade.pdf" size="1.8 MB" type="Obrigatório" icon={<FileText className="text-red-500" />} />
                                 </div>
                             </section>
                         </div>
 
-                        <footer className="p-6 bg-slate-50/50 border-t border-slate-100 flex justify-between gap-4">
-                            <button className="flex-1 max-w-xs py-3 border-2 border-red-500 text-red-500 font-bold rounded-full hover:bg-red-50 transition-colors flex items-center justify-center gap-2">
-                                <X size={18} /> Rejeitar Cadastro
+                        <footer className="p-4 bg-slate-50/50 border-t border-slate-100 flex justify-between gap-4 items-center">
+                            <button className="flex-1 max-w-[180px] py-2 border-2 border-red-500 text-red-500 font-bold text-xs rounded-full hover:bg-red-50 transition-colors flex items-center justify-center gap-2">
+                                <X size={14} /> Rejeitar Cadastro
                             </button>
-                            <div className="flex gap-4 flex-1 justify-end">
-                                <button className="px-8 py-3 bg-white border border-slate-200 text-slate-700 font-bold rounded-full hover:bg-slate-100 transition-colors">
+
+                            <div className="flex gap-2 flex-1 justify-end">
+                                <button className="px-5 py-2 bg-white border border-slate-200 text-slate-700 font-bold text-xs rounded-full hover:bg-slate-100 transition-colors">
                                     Solicitar Ajustes
                                 </button>
-                                <button className="px-8 py-3 bg-[#34D399] text-white font-bold rounded-full hover:bg-emerald-500 transition-shadow shadow-lg shadow-emerald-200 flex items-center gap-2">
-                                    <Check size={18} /> Aprovar Profissional
+                                <button className="px-5 py-2 bg-[#34D399] text-white font-bold text-xs rounded-full hover:bg-emerald-500 shadow-sm flex items-center gap-2">
+                                    <Check size={14} /> Aprovar Profissional
                                 </button>
                             </div>
                         </footer>
@@ -132,9 +140,13 @@ function ValidacaoCadastro() {
 
 
 const DataField = ({ label, value }: { label: string, value: string }) => (
-    <div>
-        <label className="block text-xs font-semibold text-slate-400 mb-1">{label}</label>
-        <p className="text-slate-700 font-medium">{value}</p>
+    <div className="flex flex-col gap-0.5">
+        <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-tight">
+            {label}
+        </label>
+        <p className="text-slate-700 font-semibold text-sm leading-snug">
+            {value}
+        </p>
     </div>
 );
 
