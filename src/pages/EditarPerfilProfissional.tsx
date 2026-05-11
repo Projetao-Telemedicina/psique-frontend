@@ -6,7 +6,7 @@
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import SidebarProfissional from '../components/SidebarProfissional';
+import Sidebar from '../components/Sidebar';
 import CampoEditavel from '../components/CampoEditavel';
 
 // TODO: substituir pelos dados reais vindos da API
@@ -177,7 +177,7 @@ export default function EditarPerfilProfissional() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F0F4F8' }}>
 
-      <SidebarProfissional navigate={navigate} itemAtivo="perfil" atendimentoAtivo={atendimentoativotemporario} />
+      <Sidebar role="profissional" navigate={navigate} itemAtivo="perfil" atendimentoAtivo={atendimentoativotemporario} />
 
       <main style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
 

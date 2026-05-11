@@ -3,7 +3,7 @@
 // FA01: profissional com vínculo vê apenas Nome, Foto, Idade, Telefone
 
 import { useNavigate } from 'react-router-dom'
-import SidebarPaciente from '../components/SidebarPaciente'
+import Sidebar from '../components/Sidebar'
 import CampoPerfil from '../components/CampoPerfil'
 
 // TODO: substituir pelo usuário real vindo da autenticação
@@ -51,12 +51,17 @@ export default function VisualizarPerfilPaciente() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F0F4F8' }}>
 
-      {/* SIDEBAR */}
-      <SidebarPaciente navigate={navigate} itemAtivo="perfil" />
+
 
       {/* CONTEÚDO PRINCIPAL */}
-      <main style={{ flex: 1, overflowY: 'auto', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+      <main style={{ flex: 1, overflowY: 'auto', position: 'relative', display: 'flex', flexDirection: 'row' }}>
 
+        {/* SIDEBAR */}
+        <Sidebar role="paciente" navigate={navigate} itemAtivo="perfil" />
+
+
+
+        <div style={{ flex: 1, overflowY: 'auto', position: 'relative', display: 'flex', flexDirection: 'column' }}>
         {/* TOPBAR */}
         <div style={{
           display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
@@ -114,6 +119,10 @@ export default function VisualizarPerfilPaciente() {
             Botão de Emergência
           </button>
         </div>
+        
+
+        <div style={{ flex: 1, overflowY: 'auto', position: 'relative', display: 'flex', flexDirection: 'row' }}>
+        
 
         {/* CORPO */}
         <div style={{ padding: '24px 32px', flex: 1 }}>
@@ -640,6 +649,8 @@ export default function VisualizarPerfilPaciente() {
               </div>
             )}
           </div>
+        </div>
+        </div>
         </div>
       </main>
     </div>

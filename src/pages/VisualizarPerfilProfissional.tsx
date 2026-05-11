@@ -4,7 +4,7 @@
 // FA02: paciente com vínculo vê dados públicos + registro profissional
 
 import { useNavigate } from 'react-router-dom'
-import SidebarProfissional from '../components/SidebarProfissional';
+import Sidebar from '../components/Sidebar';
 import CampoPerfil from '../components/CampoPerfil';
 
 // TODO: substituir pelo usuário real vindo da autenticação
@@ -53,7 +53,7 @@ export default function VisualizarPerfilProfissional() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F0F4F8' }}>
-      <SidebarProfissional
+      <Sidebar role="profissional"
         navigate={navigate}
         itemAtivo="perfil"
         atendimentoAtivo={dadosProfissional.atendimentoAtivo}

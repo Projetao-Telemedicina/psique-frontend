@@ -6,7 +6,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import CampoEditavel from '../components/CampoEditavel';
-import SidebarPaciente from '../components/SidebarPaciente';
+import Sidebar from '../components/Sidebar';
 
 // TODO: substituir pelos dados reais vindos da API
 const dadosIniciais = {
@@ -174,7 +174,7 @@ export default function EditarPerfilPaciente() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F0F4F8' }}>
 
-      <SidebarPaciente navigate={navigate} itemAtivo="perfil" />
+      <Sidebar role="paciente" navigate={navigate} itemAtivo="perfil" />
 
       <main style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
 

@@ -10,6 +10,7 @@ import VisualizarPerfilPaciente from './pages/VisualizarPerfilPaciente'
 import EditarPerfilPaciente from './pages/EditarPerfilPaciente'
 import EditarPerfilProfissional from './pages/EditarPerfilProfissional'
 import VisualizarPerfilProfissional from './pages/VisualizarPerfilProfissional'
+import ValidacaoCadastro from './pages/ValidacaoCadastro.tsx'
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
       <Route path='/cadastro' element={<Cadastro/>} />
       <Route path='/cadastro/cliente' element={<CadastroCliente/>} />
       <Route path='/cadastro/profissional' element={<CadastroProfissional/>} />
+      <Route path='/admin/validacao' element={<ValidacaoCadastro/>} />
 
       <Route path="/perfil/paciente/editar" element={<EditarPerfilPaciente />} />
       <Route path="/perfil/profissional/editar" element={<EditarPerfilProfissional />} />
