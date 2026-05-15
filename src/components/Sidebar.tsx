@@ -1,6 +1,13 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../components/AuthContext';
 
-// --- Tipagem Atualizada ---
+interface SidebarProps {
+  role: UserRole;
+  itemAtivo: string;
+  atendimentoAtivo?: boolean;
+}
+
 type UserRole = 'paciente' | 'profissional' | 'administrador';
 
 interface IconProps {
@@ -8,14 +15,7 @@ interface IconProps {
   color?: string;
 }
 
-interface SidebarProps {
-  role: UserRole;
-  itemAtivo: string;
-  navigate: (path: string) => void;
-  atendimentoAtivo?: boolean;
-}
 
-// --- Ícones Reutilizáveis ---
 const IconWrapper = ({ children, size = 18, color = 'currentColor' }: { children: React.ReactNode } & IconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     {children}
@@ -23,7 +23,7 @@ const IconWrapper = ({ children, size = 18, color = 'currentColor' }: { children
 );
 
 const Icons = {
-  // Ícones Originais
+
   Home: (p: IconProps) => <IconWrapper {...p}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></IconWrapper>,
   Diario: (p: IconProps) => <IconWrapper {...p}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></IconWrapper>,
   Agenda: (p: IconProps) => <IconWrapper {...p}><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></IconWrapper>,
@@ -31,8 +31,8 @@ const Icons = {
   Chat: (p: IconProps) => <IconWrapper {...p}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></IconWrapper>,
   Ligacao: (p: IconProps) => <IconWrapper {...p}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.8a16 16 0 0 0 6.29 6.29l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" /></IconWrapper>,
   Perfil: (p: IconProps) => <IconWrapper {...p}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></IconWrapper>,
-  
-  // Novos Ícones para Admin
+
+
   Validacao: (p: IconProps) => <IconWrapper {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></IconWrapper>,
   Usuarios: (p: IconProps) => <IconWrapper {...p}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></IconWrapper>,
   Financeiro: (p: IconProps) => <IconWrapper {...p}><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></IconWrapper>,
@@ -44,9 +44,22 @@ const Icons = {
   )
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ role, itemAtivo, navigate, atendimentoAtivo = false }) => {
-  
-  // --- Definição dos Itens de Menu por Role ---
+const Sidebar: React.FC<SidebarProps> = ({ role, itemAtivo, atendimentoAtivo = false }) => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    // 1. Limpa os dados de autenticação (token, estado global, localStorage)
+    if (logout) {
+      logout();
+    } else {
+      localStorage.removeItem('accessToken');
+    }
+
+    // 2. Redireciona para o login
+    navigate('/login');
+  };
+
   const getMenuItems = () => {
     if (role === 'administrador') {
       return [
@@ -107,7 +120,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role, itemAtivo, navigate, atendiment
           alt="Logo Psique"
           style={{ width: '220px', height: '180px', objectFit: 'contain' }}
         />
-        
+
       </div>
 
       {/* --- Navegação --- */}
@@ -164,7 +177,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role, itemAtivo, navigate, atendiment
 
       {/* --- Logout --- */}
       <button
-        onClick={() => navigate('/login')}
+        onClick={handleLogout}
         style={{
           width: '100%',
           display: 'flex',
