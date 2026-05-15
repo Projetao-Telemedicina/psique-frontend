@@ -6,7 +6,6 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      // Captura tudo que começa com /api
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,
