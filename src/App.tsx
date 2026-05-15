@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, Navigate } from 'react-router-dom'
 import './App.css'
 import Login from './pages/Login.tsx';
 import RecuperarSenha from './pages/RecuperarSenha.tsx'
@@ -15,19 +15,19 @@ function App() {
   return (
     <AuthProvider>
       <Routes>
+        <Route path="/" element={<Navigate to="/login" replace />} />
+
         {/* Public Routes */}
         <Route path='/login' element={<Login />} />
         <Route path='/recuperar_senha' element={<RecuperarSenha />} />
         <Route path='/cadastro' element={<Cadastro />} />
         <Route path='/cadastro/cliente' element={<CadastroCliente />} />
         <Route path='/cadastro/profissional' element={<CadastroProfissional />} />
-        
-
 
         {/* Private Routes */}
         <Route element={<ProtectedRoute />}>
           <Route path='/admin/validacao' element={<ValidacaoCadastro />} />
-          
+
           {/* UC06 - Visualizar cadastro de paciente */}
           <Route path='/perfil/paciente' element={<VisualizarPerfilPaciente />} />
           <Route path='/perfil/paciente/:id' element={<VisualizarPerfilPaciente />} />
@@ -35,7 +35,6 @@ function App() {
           {/* UC07 - Visualizar cadastro de profissional */}
           <Route path='/perfil/profissional' element={<VisualizarPerfilProfissional />} />
           <Route path='/perfil/profissional/:id' element={<VisualizarPerfilProfissional />} />
-          {/* Add all other protected routes here */}
         </Route>
       </Routes>
     </AuthProvider>

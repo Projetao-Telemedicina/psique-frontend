@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; 
 import { AlertTriangle, Lock, CheckCircle, X, Loader2 } from 'lucide-react';
 
 interface ModalDeletarContaProps {
   isOpen: boolean;
   onClose: () => void;
+  onConfirm: () => Promise<void>; 
   tipoUsuario: 'paciente' | 'profissional';
   temConsultasAbertas: boolean; 
 }
@@ -13,9 +15,11 @@ type Passo = 'aviso' | 'senha' | 'sucesso';
 export default function ModalDeletarConta({ 
   isOpen, 
   onClose, 
+  onConfirm, 
   tipoUsuario, 
   temConsultasAbertas 
 }: ModalDeletarContaProps) {
+  const navigate = useNavigate(); // Inicializado aqui
   const [passo, setPasso] = useState<Passo>('aviso');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
@@ -34,21 +38,24 @@ export default function ModalDeletarConta({
 
   const handleEnviarSenha = async () => {
     if (!senha) {
-      setErro('Por favor, digite sua senha.');
+      setErro('Por favor, digite sua senha para confirmar.');
       return;
     }
 
     setCarregando(true);
-    
-    setTimeout(() => {
-      if (senha !== '123456') { 
-        setErro('Senha incorreta. Tente novamente.');
-        setCarregando(false);
-      } else {
-        setCarregando(false);
-        setPasso('sucesso');
-      }
-    }, 1500);
+    setErro('');
+
+    try {
+      // Executa a função de delete enviada pelo componente pai (VisualizarPerfil)
+      await onConfirm(); 
+      
+      setCarregando(false);
+      setPasso('sucesso');
+    } catch (err) {
+      console.error("Erro ao deletar conta:", err);
+      setCarregando(false);
+      setErro('Ocorreu um erro ao excluir sua conta. Verifique sua senha ou conexão.');
+    }
   };
 
   const resetAndClose = () => {
@@ -60,9 +67,8 @@ export default function ModalDeletarConta({
 
   return (
     <div className="fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-      <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden relative animate-in fade-in zoom-in duration-200">
+      <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden relative animate-in fade-in zoom-in duration-200 text-left">
         
-        {/* Botão Fechar (X) - Escondido no sucesso para forçar o redirecionamento */}
         {passo !== 'sucesso' && (
           <button 
             onClick={resetAndClose}
@@ -83,17 +89,17 @@ export default function ModalDeletarConta({
               
               <div>
                 <h2 className="text-2xl font-bold text-slate-800">Excluir sua conta?</h2>
-                <p className="text-slate-500 mt-2 text-sm">
+                <p className="text-slate-500 mt-2 text-sm text-center leading-relaxed">
                   Esta ação é <strong>permanente</strong>. Todos os seus dados como {tipoUsuario} serão removidos do Psique.
                 </p>
               </div>
 
-              <div className="bg-red-50 border border-red-100 rounded-2xl p-4 text-left space-y-2">
-                <p className="text-[11px] font-bold text-red-700 uppercase tracking-wider">Consequências:</p>
-                <ul className="text-xs text-red-600 space-y-1">
-                  <li className="flex gap-2">• Perfil removido das buscas</li>
-                  <li className="flex gap-2">• Histórico de mensagens anonimizado</li>
-                  <li className="flex gap-2">• Perda total de acesso ao aplicativo</li>
+              <div className="bg-red-50 border border-red-100 rounded-2xl p-4 text-center">
+                <p className="text-[11px] font-bold text-red-700 uppercase tracking-wider mb-2">Consequências imediatas:</p>
+                <ul className="text-xs text-red-600 space-y-1 inline-block text-left">
+                  <li>• Perfil removido instantaneamente</li>
+                  <li>• Histórico de mensagens anonimizado</li>
+                  <li>• Perda total de acesso à plataforma</li>
                 </ul>
               </div>
 
@@ -120,7 +126,7 @@ export default function ModalDeletarConta({
             </div>
           )}
 
-          {/* PASSO 2: SENHA */}
+          {/* PASSO 2: CONFIRMAÇÃO DE SENHA */}
           {passo === 'senha' && (
             <div className="space-y-6">
               <div className="w-20 h-20 bg-teal-50 rounded-full flex items-center justify-center mx-auto">
@@ -129,8 +135,8 @@ export default function ModalDeletarConta({
 
               <div>
                 <h2 className="text-2xl font-bold text-slate-800">Confirme sua senha</h2>
-                <p className="text-slate-500 mt-2 text-sm">
-                  Para sua segurança, confirme sua identidade para prosseguir.
+                <p className="text-slate-500 mt-2 text-sm leading-relaxed">
+                  Para sua segurança, precisamos confirmar que é você mesmo solicitando a exclusão.
                 </p>
               </div>
 
@@ -150,14 +156,14 @@ export default function ModalDeletarConta({
                 <button 
                   disabled={carregando}
                   onClick={handleEnviarSenha}
-                  className="w-full py-4 bg-red-600 text-white font-bold rounded-2xl hover:bg-red-700 transition-all shadow-lg flex items-center justify-center gap-2"
+                  className="w-full py-4 bg-red-600 text-white font-bold rounded-2xl hover:bg-red-700 transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   {carregando ? <Loader2 className="animate-spin" size={20} /> : "Finalizar Exclusão"}
                 </button>
                 <button 
                   disabled={carregando}
                   onClick={() => setPasso('aviso')}
-                  className="w-full py-4 bg-transparent text-slate-400 font-bold rounded-2xl hover:text-slate-600 transition-all"
+                  className="w-full py-4 bg-transparent text-slate-400 font-bold rounded-2xl hover:text-slate-600 transition-all disabled:opacity-50"
                 >
                   Voltar
                 </button>
@@ -165,7 +171,7 @@ export default function ModalDeletarConta({
             </div>
           )}
 
-          {/* PASSO 3: SUCESSO */}
+          {/* PASSO 3: SUCESSO E REDIRECIONAMENTO */}
           {passo === 'sucesso' && (
             <div className="space-y-6 py-4">
               <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mx-auto">
@@ -173,17 +179,17 @@ export default function ModalDeletarConta({
               </div>
 
               <div>
-                <h2 className="text-2xl font-bold text-slate-800">Conta Excluída</h2>
-                <p className="text-slate-500 mt-2 text-sm px-4">
-                  Sentiremos sua falta! Seus dados foram removidos e você será deslogado agora.
+                <h2 className="text-2xl font-bold text-slate-800 text-center">Conta Excluída</h2>
+                <p className="text-slate-500 mt-2 text-sm px-4 text-center leading-relaxed">
+                  Sua conta foi removida com sucesso. Esperamos ver você novamente no futuro!
                 </p>
               </div>
 
               <button 
-                onClick={() => window.location.href = '/login'}
-                className="w-full py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition-all"
+                onClick={() => navigate('/login')} 
+                className="w-full py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition-all shadow-lg"
               >
-                Sair do Aplicativo
+                Voltar para o Login
               </button>
             </div>
           )}
