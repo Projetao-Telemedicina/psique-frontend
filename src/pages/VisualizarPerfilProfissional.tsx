@@ -1,5 +1,4 @@
 import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { 
   Pencil, Trash2, Star, X, Save, 
   Camera, FileText, Plus, Trash
@@ -36,7 +35,6 @@ interface DadosProfissional {
 }
 
 export default function VisualizarPerfilProfissional() {
-  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const docInputRef = useRef<HTMLInputElement>(null);
   
@@ -108,7 +106,7 @@ export default function VisualizarPerfilProfissional() {
 
   return (
     <main className="flex h-screen w-full overflow-hidden bg-[#F8FAFC]">
-      <Sidebar role="profissional" navigate={navigate} itemAtivo="perfil" />
+      <Sidebar role="profissional" itemAtivo="perfil" />
 
       <section className="flex flex-col flex-1 overflow-hidden text-left">
         <header className="flex items-center justify-between px-8 py-6 bg-white border-b border-slate-100">
