@@ -21,7 +21,8 @@ function ValidacaoCadastro() {
     const [selectedRequest, setSelectedRequest] = useState<ValidationRequest | null>(null);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
-    
+
+
     const loadRequests = useCallback(async () => {
         try {
             setLoading(true);
@@ -32,30 +33,31 @@ function ValidacaoCadastro() {
 
             if (response.ok) {
                 const data: ValidationRequest[] = await response.json();
-
                 const pendentes = data.filter(req => req.status === 'PENDING');
 
                 setSolicitacoes(pendentes);
 
-                if (selectedRequest && !pendentes.find(r => r.id === selectedRequest.id)) {
-                    setSelectedRequest(pendentes.length > 0 ? pendentes[0] : null);
-                } else if (pendentes.length > 0 && !selectedRequest) {
-                    setSelectedRequest(pendentes[0]);
-                } else if (pendentes.length === 0) {
-                    setSelectedRequest(null);
-                }
+
+                setSelectedRequest(prev => {
+
+                    if (prev && pendentes.find(r => r.id === prev.id)) {
+                        return prev;
+                    }
+                    return pendentes.length > 0 ? pendentes[0] : null;
+                });
             }
         } catch (error) {
             console.error("Erro ao carregar validações", error);
         } finally {
             setLoading(false);
         }
-    }, [selectedRequest]);
+    }, []); 
+
 
 
     useEffect(() => {
         loadRequests();
-    }, []); 
+    }, [loadRequests]);
 
 
 
@@ -70,7 +72,7 @@ function ValidacaoCadastro() {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({}) 
+                body: JSON.stringify({})
             });
 
             if (response.ok) {
@@ -81,7 +83,9 @@ function ValidacaoCadastro() {
                 alert(`Erro ao aprovar: ${error.message || 'Erro desconhecido'}`);
             }
         } catch (error) {
+            console.error("Erro detalhado do registro:", error);
             alert("Erro na conexão com o servidor.");
+
         } finally {
             setActionLoading(false);
         }
@@ -106,6 +110,7 @@ function ValidacaoCadastro() {
                 loadRequests();
             }
         } catch (error) {
+            console.error("Erro detalhado do registro:", error);
             alert("Erro ao rejeitar.");
         } finally {
             setActionLoading(false);

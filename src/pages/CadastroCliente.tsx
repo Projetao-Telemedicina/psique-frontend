@@ -31,15 +31,17 @@ function CadastroPaciente() {
         confirmPassword: ''
     });
 
-    const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        const target = e.target as HTMLInputElement;
+        const { name, value, type, checked } = target;
+
         setFormData(prev => ({
             ...prev,
             [name]: type === 'checkbox' ? checked : value
         }));
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
         if (etapa < 3) {
@@ -62,7 +64,7 @@ function CadastroPaciente() {
             phone: formData.phone,
             birthDate: formData.birthDate,
             gender: formData.gender,
-            avatarUrl: 'https://cdn.psique.com/avatars/default.jpg', // Pode ser alterado no futuro para upload real
+            avatarUrl: 'https://cdn.psique.com/avatars/default.jpg',
             bio: formData.bio || 'Perfil criado para acompanhamento psicológico.',
             cep: formData.cep,
             state: formData.state,
@@ -94,6 +96,7 @@ function CadastroPaciente() {
                 alert(`Erro: ${errorData.message || 'Falha no cadastro'}`);
             }
         } catch (error) {
+            console.error("Erro detalhado do registro:", error);
             alert("Erro ao conectar com o servidor.");
         } finally {
             setLoading(false);

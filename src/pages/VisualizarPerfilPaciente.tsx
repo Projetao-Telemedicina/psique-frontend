@@ -1,5 +1,4 @@
 import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { 
   Pencil, Trash2, Wallet, Star, Plus, History, 
   CheckCircle, AlertTriangle, Settings, ArrowUpCircle, X, Save, Camera
@@ -13,7 +12,19 @@ import { CampoPerfil } from '../components/CampoPerfil';
 const TIPO_USUARIO = 'paciente'; 
 const PROFISSIONAL_TEM_VINCULO = true;
 
-const dadosIniciais = {
+interface PerfilPaciente {
+  nome: string;
+  tipoConta: string;
+  email: string;
+  telefone: string;
+  dataNascimento: string;
+  cpf: string;
+  endereco: string;
+  senha: string;
+  foto: string | null; // <-- Aqui está a permissão para virar string
+}
+
+const dadosIniciais: PerfilPaciente = {
   nome: 'Luana Silva',
   tipoConta: 'Conta de Cliente',
   email: 'luana@email.com',
@@ -26,7 +37,6 @@ const dadosIniciais = {
 };
 
 export default function VisualizarPerfilPaciente() {
-  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [isEditing, setIsEditing] = useState(false);
@@ -65,7 +75,7 @@ export default function VisualizarPerfilPaciente() {
 
   return (
     <main className="flex h-screen w-full overflow-hidden bg-[#F8FAFC]">
-      <Sidebar role={TIPO_USUARIO} navigate={navigate} itemAtivo="perfil" />
+      <Sidebar role={TIPO_USUARIO} itemAtivo="perfil" />
 
       <section className="flex flex-col flex-1 overflow-hidden text-left">
         <header className="flex items-center justify-between px-8 py-6 bg-white border-b border-slate-100">
