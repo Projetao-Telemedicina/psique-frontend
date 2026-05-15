@@ -4,6 +4,7 @@ import {
   Pencil, Trash2, Star, X, Save, 
   Camera, MapPin, Loader2, Settings
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 import Sidebar from '../components/Sidebar';
 import ModalDeletarConta from '../components/ModalDeletarConta';
@@ -96,12 +97,14 @@ export default function VisualizarPerfilProfissional() {
           setDados(data);
         } else {
           console.error(`Erro ao buscar dados do profissional (${response.status})`);
+          toast.error("Erro ao carregar dados do perfil.");
           if (response.status === 401 || response.status === 403) {
             navigate('/login');
           }
         }
       } catch (err) {
         console.error("Erro de rede ao conectar com a API:", err);
+        toast.error("Erro de conexão ao carregar as informações.");
       } finally {
         setLoading(false);
       }
@@ -163,14 +166,14 @@ export default function VisualizarPerfilProfissional() {
         setIsEditing(false);
         setCurrentPassword('');
         setNewPassword('');
-        alert("Perfil profissional atualizado com sucesso!");
+        toast.success("Perfil profissional atualizado com sucesso!");
       } else {
         const errorText = !resUser.ok ? "Erro ao atualizar dados cadastrais." : "Erro ao atualizar registro profissional.";
-        alert(errorText);
+        toast.error(errorText);
       }
     } catch (err) {
       console.error("Erro ao salvar:", err);
-      alert("Erro de conexão ao salvar.");
+      toast.error("Erro de conexão ao salvar.");
     } finally {
       setSaving(false);
     }
@@ -201,12 +204,17 @@ export default function VisualizarPerfilProfissional() {
 
       if (response.ok) {
         localStorage.clear();
+        toast.success("Sua conta foi removida com sucesso.");
         navigate('/login');
       } else {
-        alert("Erro ao tentar remover a conta do sistema.");
+        const errorData = await response.json();
+        toast.error(errorData.message || "Erro ao tentar remover a conta do sistema.");
       }
     } catch (err) {
       console.error("Erro ao excluir conta:", err);
+      toast.error("Erro de conexão ao tentar excluir a conta.");
+    } finally {
+      setIsDeleteModalOpen(false);
     }
   };
 

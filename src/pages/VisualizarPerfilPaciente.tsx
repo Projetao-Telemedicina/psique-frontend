@@ -4,6 +4,7 @@ import {
   Pencil, Trash2, Wallet, Star, X, Save, Camera, Loader2, MapPin, 
   Plus, History, CheckCircle, ArrowUpCircle, Settings
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 import Sidebar from '../components/Sidebar';
 import EmergencyButton from '../components/EmergencyButton'; 
@@ -11,11 +12,10 @@ import ModalDeletarConta from '../components/ModalDeletarConta';
 import { CampoPerfil } from '../components/CampoPerfil';
 import { useAuth } from '../components/AuthContext';
 
-// Interfaces baseadas no DTO esperado pelo back-end
 interface UpdateUserPayload {
   name: string;
   phone: string;
-  avatarUrl: string;
+  avatarUrl: string | null;
   city: string;
   state: string;
   street: string;
@@ -47,7 +47,7 @@ interface PerfilResponse {
     birthDate: string;
     gender: string;
     phone: string;
-    avatarUrl: string;
+    avatarUrl: string | null;
     cep: string;
     state: string;
     city: string;
@@ -84,14 +84,15 @@ export default function VisualizarPerfilPaciente() {
       });
       if (response.ok) {
         localStorage.clear();
+        toast.success("Sua conta foi excluída com sucesso.");
         navigate('/login');
       } else {
         const errorData = await response.json();
-        alert(errorData.message || "Erro ao deletar conta.");
+        toast.error(errorData.message || "Erro ao deletar conta.");
       }
     } catch (err) {
       console.error("Erro na exclusão:", err);
-      alert("Erro de conexão ao tentar excluir a conta.");
+      toast.error("Erro de conexão ao tentar excluir a conta.");
     } finally {
       setIsDeleteModalOpen(false);
     }
@@ -120,6 +121,7 @@ export default function VisualizarPerfilPaciente() {
         setLoading(false);
       } catch (err) { 
         console.error("Erro conexão:", err); 
+        toast.error("Erro ao carregar os dados do perfil.");
         setLoading(false);
       }
     };
@@ -186,14 +188,14 @@ export default function VisualizarPerfilPaciente() {
         setIsEditing(false);
         setCurrentPassword('');
         setNewPassword('');
-        alert("Perfil e foto atualizados com sucesso!");
+        toast.success("Perfil e foto atualizados com sucesso!");
       } else {
         const errorText = !resUser.ok ? "Erro ao atualizar dados cadastrais." : "Erro ao atualizar dados clínicos.";
-        alert(errorText);
+        toast.error(errorText);
       }
     } catch (err) {
       console.error("Erro ao salvar:", err);
-      alert("Erro de conexão ao salvar.");
+      toast.error("Erro de conexão ao salvar.");
     } finally { 
       setSaving(false); 
     }
@@ -279,7 +281,6 @@ export default function VisualizarPerfilPaciente() {
                 <div className="border-t border-slate-50 pt-8 text-left">
                     <div className="grid grid-cols-2 gap-y-6 gap-x-12">
                       
-                      {/* Dados Gerais usando o componente customizado CampoPerfil */}
                       <CampoPerfil 
                         label="Nome Completo" 
                         valor={dados.user.name} 
@@ -351,7 +352,6 @@ export default function VisualizarPerfilPaciente() {
                         onChange={(val) => setDados({...dados, emergencyContactPhone: maskPhone(val)})} 
                       />
 
-                      {/* Senhas gerenciadas diretamente pelo CampoPerfil com tipo password */}
                       {isEditing && (
                         <>
                           <CampoPerfil 
@@ -408,7 +408,6 @@ export default function VisualizarPerfilPaciente() {
               </div>
             </article>
 
-            {/* Asides Laterais preservados com Match, Carteira e Planos */}
             <aside className={`w-[400px] flex flex-col gap-6 transition-opacity ${isEditing ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
               <SideCard title="Carteira Virtual" icon={<Wallet className="text-blue-500" />}>
                 <div className="bg-slate-50 rounded-2xl p-5 mb-4 text-left">

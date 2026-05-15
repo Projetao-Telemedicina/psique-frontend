@@ -1,4 +1,5 @@
 import { Route, Routes, Navigate } from 'react-router-dom'
+import { Toaster } from 'react-hot-toast' 
 import './App.css'
 import Login from './pages/Login.tsx';
 import RecuperarSenha from './pages/RecuperarSenha.tsx'
@@ -14,6 +15,23 @@ import ProtectedRoute from './components/ProtectedRoute';
 function App() {
   return (
     <AuthProvider>
+      {/* Toast */}
+      <Toaster 
+        position="top-right" 
+        reverseOrder={false} 
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#ffffff',
+            color: '#1E293B',
+            borderRadius: '12px',
+            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+            fontSize: '14px',
+            fontWeight: '600',
+          },
+        }}
+      />
+
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
 
