@@ -75,27 +75,26 @@ export default function VisualizarPerfilPaciente() {
 
   const TIPO_USUARIO = 'paciente';
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = async (senha: string) => {
     const activeToken = token || localStorage.getItem('token');
-    try {
-      const response = await fetch(`/api/users/${dados?.userId}`, { 
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${activeToken}` }
-      });
-      if (response.ok) {
-        localStorage.clear();
-        toast.success("Sua conta foi excluída com sucesso.");
-        navigate('/login');
-      } else {
-        const errorData = await response.json();
-        toast.error(errorData.message || "Erro ao deletar conta.");
-      }
-    } catch (err) {
-      console.error("Erro na exclusão:", err);
-      toast.error("Erro de conexão ao tentar excluir a conta.");
-    } finally {
-      setIsDeleteModalOpen(false);
+    const response = await fetch(`/api/users/${dados?.userId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${activeToken}`
+      },
+      body: JSON.stringify({ password: senha })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Erro ao deletar conta.");
     }
+
+    localStorage.clear();
+    toast.success("Sua conta foi excluída com sucesso.");
+    setIsDeleteModalOpen(false);
+    navigate('/login');
   };
 
   useEffect(() => {
@@ -188,7 +187,7 @@ export default function VisualizarPerfilPaciente() {
         setIsEditing(false);
         setCurrentPassword('');
         setNewPassword('');
-        toast.success("Perfil e foto atualizados com sucesso!");
+        toast.success("Perfil atualizado com sucesso!");
       } else {
         const errorText = !resUser.ok ? "Erro ao atualizar dados cadastrais." : "Erro ao atualizar dados clínicos.";
         toast.error(errorText);

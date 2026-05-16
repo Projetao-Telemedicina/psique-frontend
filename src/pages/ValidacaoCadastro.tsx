@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Search, Bell, Eye, Check, X, FileText, Loader2, User } from 'lucide-react';
-import { toast } from 'react-hot-toast';
 import Sidebar from '../components/Sidebar.tsx';
 
 interface ValidationRequest {
@@ -19,14 +17,11 @@ interface ValidationRequest {
 }
 
 function ValidacaoCadastro() {
-    const navigate = useNavigate();
     const [solicitacoes, setSolicitacoes] = useState<ValidationRequest[]>([]);
-    const [selectedId, setSelectedId] = useState<string | null>(null); 
+    const [selectedRequest, setSelectedRequest] = useState<ValidationRequest | null>(null);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
 
-    
-    const selectedRequest = solicitacoes.find(r => r.id === selectedId) || solicitacoes[0] || null;
 
     const loadRequests = useCallback(async () => {
         try {
@@ -41,25 +36,33 @@ function ValidacaoCadastro() {
                 const pendentes = data.filter(req => req.status === 'PENDING');
 
                 setSolicitacoes(pendentes);
-            } else if (response.status === 401 || response.status === 403) {
-                toast.error("Sessão expirada. Faça login novamente.");
-                navigate('/login');
+
+
+                setSelectedRequest(prev => {
+
+                    if (prev && pendentes.find(r => r.id === prev.id)) {
+                        return prev;
+                    }
+                    return pendentes.length > 0 ? pendentes[0] : null;
+                });
             }
         } catch (error) {
             console.error("Erro ao carregar validações", error);
-            toast.error("Erro ao carregar solicitações pendentes.");
         } finally {
             setLoading(false);
         }
-    }, [navigate]);
+    }, []); 
+
+
 
     useEffect(() => {
-        Promise.resolve().then(loadRequests);
+        loadRequests();
     }, [loadRequests]);
+
+
 
     const handleApprove = async (id: string) => {
         if (!confirm("Deseja aprovar este profissional?")) return;
-        
         try {
             setActionLoading(true);
             const token = localStorage.getItem('token');
@@ -73,16 +76,16 @@ function ValidacaoCadastro() {
             });
 
             if (response.ok) {
-                toast.success("Profissional aprovado com sucesso!");
-                setSolicitacoes(prev => prev.filter(req => req.id !== id));
-                setSelectedId(null); 
+                alert("Profissional aprovado!");
+                loadRequests();
             } else {
                 const error = await response.json();
-                toast.error(`Erro ao aprovar: ${error.message || 'Erro desconhecido'}`);
+                alert(`Erro ao aprovar: ${error.message || 'Erro desconhecido'}`);
             }
         } catch (error) {
-            console.error("Erro ao aprovar:", error);
-            toast.error("Erro de conexão com o servidor.");
+            console.error("Erro detalhado do registro:", error);
+            alert("Erro na conexão com o servidor.");
+
         } finally {
             setActionLoading(false);
         }
@@ -91,7 +94,6 @@ function ValidacaoCadastro() {
     const handleReject = async (id: string) => {
         const reason = prompt("Motivo da rejeição:");
         if (!reason) return;
-
         try {
             setActionLoading(true);
             const token = localStorage.getItem('token');
@@ -103,17 +105,13 @@ function ValidacaoCadastro() {
                 },
                 body: JSON.stringify({ rejectionReason: reason })
             });
-
             if (response.ok) {
-                toast.success("Cadastro rejeitado.");
-                setSolicitacoes(prev => prev.filter(req => req.id !== id));
-                setSelectedId(null);
-            } else {
-                toast.error("Erro ao processar rejeição.");
+                alert("Cadastro rejeitado.");
+                loadRequests();
             }
         } catch (error) {
-            console.error("Erro ao rejeitar:", error);
-            toast.error("Erro de conexão ao rejeitar.");
+            console.error("Erro detalhado do registro:", error);
+            alert("Erro ao rejeitar.");
         } finally {
             setActionLoading(false);
         }
@@ -152,33 +150,30 @@ function ValidacaoCadastro() {
 
                         <div className="flex-1 overflow-y-auto pr-2 flex flex-col gap-3 custom-scrollbar">
                             {loading ? (
-                                <div className="flex justify-center p-10"><Loader2 className="animate-spin text-teal-600" /></div>
+                                <div className="flex justify-center p-10"><Loader2 className="animate-spin text-sky" /></div>
                             ) : (
-                                solicitacoes.map((s) => {
-                                    const isSelected = selectedRequest?.id === s.id;
-                                    return (
-                                        <div
-                                            key={s.id}
-                                            onClick={() => setSelectedId(s.id)}
-                                            className={`p-4 rounded-2xl border-2 transition-all cursor-pointer ${isSelected ? 'bg-white border-teal-600 shadow-md' : 'bg-white border-transparent opacity-70 hover:opacity-100'
-                                                }`}
-                                        >
-                                            <div className="flex gap-3 items-center mb-3">
-                                                <div className="w-12 h-12 rounded-lg bg-slate-200 flex items-center justify-center text-slate-400">
-                                                    <User size={24} />
-                                                </div>
-                                                <div>
-                                                    <h3 className="font-bold text-slate-800 text-sm">{s.professional.user.name}</h3>
-                                                    <p className="text-xs text-slate-500">CRP {s.professional.crp}</p>
-                                                </div>
+                                solicitacoes.map((s) => (
+                                    <div
+                                        key={s.id}
+                                        onClick={() => setSelectedRequest(s)}
+                                        className={`p-4 rounded-2xl border-2 transition-all cursor-pointer ${selectedRequest?.id === s.id ? 'bg-white border-sky shadow-md' : 'bg-white border-transparent opacity-70 hover:opacity-100'
+                                            }`}
+                                    >
+                                        <div className="flex gap-3 items-center mb-3">
+                                            <div className="w-12 h-12 rounded-lg bg-slate-200 flex items-center justify-center text-slate-400">
+                                                <User size={24} />
                                             </div>
-                                            <div className="flex justify-between items-center border-t pt-3 border-slate-50">
-                                                <span className="text-[10px] text-slate-400 font-medium uppercase">Pendente</span>
-                                                <span className="text-[10px] bg-orange-100 text-orange-600 font-bold px-2 py-1 rounded-md">EM ANÁLISE</span>
+                                            <div>
+                                                <h3 className="font-bold text-slate-800 text-sm">{s.professional.user.name}</h3>
+                                                <p className="text-xs text-slate-500">CRP {s.professional.crp}</p>
                                             </div>
                                         </div>
-                                    );
-                                })
+                                        <div className="flex justify-between items-center border-t pt-3 border-slate-50">
+                                            <span className="text-[10px] text-slate-400 font-medium uppercase">Pendente</span>
+                                            <span className="text-[10px] bg-orange-100 text-orange-600 font-bold px-2 py-1 rounded-md">EM ANÁLISE</span>
+                                        </div>
+                                    </div>
+                                ))
                             )}
                         </div>
                     </aside>
@@ -193,7 +188,7 @@ function ValidacaoCadastro() {
                                         </div>
                                         <div>
                                             <h2 className="text-2xl font-bold text-slate-800 leading-tight">{selectedRequest.professional.user.name}</h2>
-                                            <p className="text-teal-600 font-medium text-sm">Candidato a Psicólogo Clínico</p>
+                                            <p className="text-sky font-medium text-sm">Candidato a Psicólogo Clínica</p>
                                         </div>
                                     </div>
                                     <div className="text-right">
@@ -267,7 +262,7 @@ const DataField = ({ label, value }: { label: string, value: string }) => (
 );
 
 const DocCard = ({ title, size, type, icon }: { title: string, size: string, type: string, icon: React.ReactNode }) => (
-    <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl hover:border-teal-600/30 transition-colors group">
+    <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl hover:border-sky/30 transition-colors group">
         <div className="flex items-center gap-3">
             <div className="p-2 bg-white rounded-lg shadow-sm">{icon}</div>
             <div>
@@ -275,7 +270,7 @@ const DocCard = ({ title, size, type, icon }: { title: string, size: string, typ
                 <p className="text-[10px] text-slate-400 font-medium">{size} • {type}</p>
             </div>
         </div>
-        <button className="p-2 text-slate-400 hover:text-teal-600 transition-colors">
+        <button className="p-2 text-slate-400 hover:text-sky transition-colors">
             <Eye size={18} />
         </button>
     </div>

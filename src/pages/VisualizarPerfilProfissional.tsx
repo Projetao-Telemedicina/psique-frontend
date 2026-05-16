@@ -193,29 +193,27 @@ export default function VisualizarPerfilProfissional() {
     }
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = async (senha: string) => {
     const activeToken = token || localStorage.getItem('token');
     const targetUserId = dados?.user.id || user?.id || localStorage.getItem('userId');
-    try {
-      const response = await fetch(`/api/users/${targetUserId}`, { 
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${activeToken}` }
-      });
+    const response = await fetch(`/api/users/${targetUserId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${activeToken}`
+      },
+      body: JSON.stringify({ password: senha })
+    });
 
-      if (response.ok) {
-        localStorage.clear();
-        toast.success("Sua conta foi removida com sucesso.");
-        navigate('/login');
-      } else {
-        const errorData = await response.json();
-        toast.error(errorData.message || "Erro ao tentar remover a conta do sistema.");
-      }
-    } catch (err) {
-      console.error("Erro ao excluir conta:", err);
-      toast.error("Erro de conexão ao tentar excluir a conta.");
-    } finally {
-      setIsDeleteModalOpen(false);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Erro ao tentar remover a conta do sistema.");
     }
+
+    localStorage.clear();
+    toast.success("Sua conta foi removida com sucesso.");
+    setIsDeleteModalOpen(false);
+    navigate('/login');
   };
 
   const maskCPF = (v: string = "") => v.replace(/\D/g, '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4").substring(0, 14);

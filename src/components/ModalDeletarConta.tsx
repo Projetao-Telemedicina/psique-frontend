@@ -5,9 +5,9 @@ import { AlertTriangle, Lock, CheckCircle, X, Loader2 } from 'lucide-react';
 interface ModalDeletarContaProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => Promise<void>; 
+  onConfirm: (senha: string) => Promise<void>;
   tipoUsuario: 'paciente' | 'profissional';
-  temConsultasAbertas: boolean; 
+  temConsultasAbertas: boolean;
 }
 
 type Passo = 'aviso' | 'senha' | 'sucesso';
@@ -46,15 +46,13 @@ export default function ModalDeletarConta({
     setErro('');
 
     try {
-      // Executa a função de delete enviada pelo componente pai (VisualizarPerfil)
-      await onConfirm(); 
-      
+      await onConfirm(senha);
       setCarregando(false);
       setPasso('sucesso');
     } catch (err) {
       console.error("Erro ao deletar conta:", err);
       setCarregando(false);
-      setErro('Ocorreu um erro ao excluir sua conta. Verifique sua senha ou conexão.');
+      setErro(err instanceof Error ? err.message : 'Ocorreu um erro ao excluir sua conta. Verifique sua senha ou conexão.');
     }
   };
 
