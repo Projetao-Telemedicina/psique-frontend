@@ -44,7 +44,7 @@ const Icons = {
   )
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ role, itemAtivo, atendimentoAtivo = false }) => {
+const Sidebar: React.FC<SidebarProps> = ({ role, itemAtivo }) => {
   const navigate = useNavigate();
   const { logout } = useAuth();
 

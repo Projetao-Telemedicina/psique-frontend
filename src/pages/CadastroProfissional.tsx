@@ -28,12 +28,12 @@ function CadastroProfissional() {
         role: 'PROFESSIONAL'
     });
 
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
         if (etapa < 3) {
@@ -53,7 +53,7 @@ function CadastroProfissional() {
 
         setLoading(true);
 
-        const { crp, confirmPassword: _confirmPassword, ...userData } = formData;
+        const { crp, ...userData } = formData;
 
         const payload = {
             ...userData,
@@ -61,7 +61,7 @@ function CadastroProfissional() {
             street: "Não informado",
             number: "SN",
             professionalProfile: {
-                crp: crp, 
+                crp: crp,
                 specialty: "Geral",
                 availableForEmergency: false,
                 gapBetweenAppointmentsMinutes: 15
@@ -106,7 +106,7 @@ function CadastroProfissional() {
             alert("Cadastro concluído com sucesso!");
             window.location.href = '/login';
 
-        } catch (error: any) {
+        } catch (error: unknown) { // Mudado de 'any' para 'unknown' para agradar o ESLint
             const message = error instanceof Error ? error.message : "Erro desconhecido";
             alert(message);
         } finally {
