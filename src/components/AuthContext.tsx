@@ -24,8 +24,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const getUserFromToken = (t: string | null): User | null => {
         if (!t) return null;
         try {
-            return jwtDecode<User>(t);
-        } catch {
+            interface JwtPayload {
+                sub?: string;
+                id?: string;
+                email: string;
+                role: 'ADMIN' | 'PROFESSIONAL' | 'PATIENT';
+            }
+
+            const decoded = jwtDecode<JwtPayload>(t);
+            
+            return {
+                id: decoded.sub || decoded.id || '', 
+                email: decoded.email,
+                role: decoded.role
+            };
+        } catch (error) {
+            console.error("Erro ao decodificar token:", error);
             return null;
         }
     };
@@ -40,10 +54,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setToken(newToken);
         setUser(decodedUser);
 
+        // Redirecionamento baseado na Role
         if (decodedUser?.role === 'ADMIN') {
             navigate('/admin/validacao');
-        } else {
+        } else if (decodedUser?.role === 'PATIENT') {
             navigate('/perfil/paciente');
+        } else if (decodedUser?.role === 'PROFESSIONAL') {
+            navigate('/perfil/profissional');
         }
     };
 
