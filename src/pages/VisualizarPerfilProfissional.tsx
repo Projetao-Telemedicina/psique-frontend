@@ -307,7 +307,8 @@ export default function VisualizarPerfilProfissional() {
                         Quer ajustar seu público?
                       </span>
                       <button 
-                        onClick={() => navigate('/questionario-match')}
+                        type="button"
+                        onClick={() => navigate('/match')}
                         className="w-full text-xs bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-bold shadow-md transition-all active:scale-95"
                       >
                         Refazer questionário de match

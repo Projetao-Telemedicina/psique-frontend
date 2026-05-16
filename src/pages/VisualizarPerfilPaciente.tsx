@@ -270,7 +270,11 @@ export default function VisualizarPerfilPaciente() {
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest w-full">
                         Não gostou das recomendações?
                       </span>
-                      <button className="w-full text-xs bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-bold shadow-md transition-all active:scale-95">
+                      <button 
+                        type="button"
+                        onClick={() => navigate('/match')}
+                        className="w-full text-xs bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-bold shadow-md transition-all active:scale-95"
+                      >
                         Refazer questionário de match
                       </button>
                     </div>
