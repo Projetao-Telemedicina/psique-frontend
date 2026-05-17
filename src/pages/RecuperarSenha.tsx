@@ -1,4 +1,4 @@
-import { useState, useEffect} from 'react';
+import { useState, useEffect } from 'react';
 import HeroSection from '../components/HeroSection.js';
 import { ChevronLeft } from 'lucide-react';
 
@@ -9,13 +9,13 @@ function RecuperarSenha() {
 
     const [email, setEmail] = useState('');
 
-    const handleAvancar = (e) => {
+    const handleAvancar = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (etapa < 3) setEtapa(etapa + 1);
     };
 
 
-    const handleVoltar = (e) => {
+    const handleVoltar = (e: React.MouseEvent<HTMLAnchorElement>) => {
         if (etapa > 1) {
             e.preventDefault();
             setEtapa(etapa - 1);
@@ -31,7 +31,7 @@ function RecuperarSenha() {
         }
     }, [etapa, segundos]);
 
-    const formatarTempo = (totalSegundos) => {
+    const formatarTempo = (totalSegundos: number): string => {
         const minutos = Math.floor(totalSegundos / 60);
         const segs = totalSegundos % 60;
         return `${minutos.toString().padStart(2, '0')}:${segs.toString().padStart(2, '0')}`;
