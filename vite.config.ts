@@ -9,7 +9,9 @@ export default defineConfig({
       // Captura tudo que começa com /api
       '/api': {
         target: 'http://localhost:3000',
+        //target: 'https://psique-backend.onrender.com',
         changeOrigin: true,
+        //secure: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, ''),
       }
