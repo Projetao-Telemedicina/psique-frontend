@@ -12,6 +12,7 @@ import ValidacaoCadastro from './pages/ValidacaoCadastro.tsx'
 import QuestionarioMatch from './pages/QuestionarioMatch.tsx';
 import { AuthProvider } from './components/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import Agenda from './pages/Agenda.tsx';
 
 function App() {
   return (
@@ -57,6 +58,7 @@ function App() {
           <Route path='/perfil/profissional/:id' element={<VisualizarPerfilProfissional />} />
           
           <Route path='/match' element={<QuestionarioMatch />} />
+          <Route path='/agenda' element={<Agenda />} />
         </Route>
       </Routes>
     </AuthProvider>
