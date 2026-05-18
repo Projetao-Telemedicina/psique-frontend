@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { 
-  Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight, 
-  Video, ArrowLeftRight, XCircle, ExternalLink, FileText, CheckCircle, AlertCircle
+  Calendar as CalendarIcon, Clock, Video, ArrowLeftRight, 
+  XCircle, ExternalLink, FileText, CheckCircle, AlertCircle
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Sidebar from '../components/Sidebar';
 import EmergencyButton from '../components/EmergencyButton';
 import CancelAppointmentModal from '../components/CancelAppointmentModal';
 import AppointmentRescheduleModal from '../components/AppointmentRescheduleModal';
+import CalendarView from '../components/CalendarView';
+import { useAuth } from '../components/AuthContext';
 
 interface Appointment {
   id: string;
@@ -17,6 +19,7 @@ interface Appointment {
   patientId: string;
   professionalId: string;
   meetLink?: string;
+  cancellationReason?: string;
   professional?: {
     specialty: string;
     user: { name: string; avatarUrl: string | null };
@@ -27,6 +30,8 @@ interface Appointment {
 }
 
 export default function Agenda() {
+  const { user } = useAuth();
+
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
   
@@ -34,31 +39,11 @@ export default function Agenda() {
   const [historyAppointments, setHistoryAppointments] = useState<Appointment[]>([]);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
 
-  const [currentDate, setCurrentDate] = useState(new Date());
-
-  const currentYear = currentDate.getFullYear();
-  const currentMonth = currentDate.getMonth(); // 0 = Janeiro, 4 = Maio, etc.
-
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  
-  const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay();
-
-  const handlePreviousMonth = () => {
-    setCurrentDate(new Date(currentYear, currentMonth - 1, 1));
+  const getSidebarRole = (): "paciente" | "profissional" | "administrador" => {
+    if (user?.role === 'PROFESSIONAL') return 'profissional';
+    if (user?.role === 'ADMIN') return 'administrador';
+    return 'paciente';
   };
-
-  const handleNextMonth = () => {
-    setCurrentDate(new Date(currentYear, currentMonth + 1, 1));
-  };
-
-  const formattedMonthYear = currentDate.toLocaleDateString('pt-BR', {
-    month: 'long',
-    year: 'numeric'
-  });
-
-  const formattedMonthShort = currentDate.toLocaleDateString('pt-BR', {
-    month: 'short'
-  }).replace('.', '');
 
   // Busca os agendamentos futuros/ativos do paciente logado
   const fetchUpcomingAppointments = async () => {
@@ -155,7 +140,7 @@ export default function Agenda() {
 
   return (
     <main className="flex h-screen w-full overflow-hidden bg-[#F8FAFC]">
-      <Sidebar role="paciente" itemAtivo="agenda" />
+      <Sidebar role={getSidebarRole()} itemAtivo="agenda" />
 
       <section className="flex flex-col flex-1 overflow-hidden text-left">
         <header className="flex items-center justify-between px-8 py-6 bg-white border-b border-slate-100 shrink-0">
@@ -171,84 +156,11 @@ export default function Agenda() {
           {/* PAINEL DA ESQUERDA: Calendário + Histórico abaixo */}
           <div className="flex-1 overflow-y-auto p-8 flex flex-col gap-6">
             
-            {/* Bloco do Calendário */}
-            <div className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm flex flex-col shrink-0">
-              
-              <div className="flex items-center gap-4 mb-6">
-                <span className="text-lg font-bold text-slate-800 capitalize">{formattedMonthYear}</span>
-                <div className="flex items-center gap-1 bg-slate-50 p-1.5 rounded-xl border border-slate-100">
-                  <button 
-                    onClick={handlePreviousMonth}
-                    className="p-1 hover:bg-white rounded-md text-slate-600 hover:shadow-xs transition-all cursor-pointer"
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-                  <div className="bg-[#52B788] text-white font-semibold text-xs px-2.5 py-1 rounded-lg shadow-xs min-w-[50px] text-center capitalize">
-                    {formattedMonthShort}
-                  </div>
-                  <button 
-                    onClick={handleNextMonth}
-                    className="p-1 hover:bg-white rounded-md text-slate-600 hover:shadow-xs transition-all cursor-pointer"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-7 text-center gap-2 border-b border-slate-100 pb-3 mb-2">
-                {['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'].map(d => (
-                  <span key={d} className="text-xs font-bold text-slate-400 uppercase tracking-wide">{d}</span>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-7 gap-2">
-                {/* 3. Renderização Dinâmica do Offset do primeiro dia da semana */}
-                {Array.from({ length: firstDayOfWeek }).map((_, i) => (
-                  <div key={`empty-${i}`} className="bg-slate-50/40 rounded-2xl min-h-[85px]"></div>
-                ))}
-                
-                {/* 4. Renderização Dinâmica da quantidade exata de dias do mês */}
-                {Array.from({ length: daysInMonth }).map((_, index) => {
-                  const diaAtual = index + 1;
-                  
-                  // Procura consultas filtrando pelo Dia, Mês e Ano selecionados dinamicamente
-                  const consultaDoDia = appointments.find(app => {
-                    const dataAgendada = new Date(app.startsAt);
-                    return (
-                      dataAgendada.getUTCDate() === diaAtual && 
-                      dataAgendada.getUTCMonth() === currentMonth &&
-                      dataAgendada.getUTCFullYear() === currentYear
-                    );
-                  });
-
-                  return (
-                    <div 
-                      key={diaAtual} 
-                      className={`p-2.5 rounded-2xl border min-h-[85px] flex flex-col justify-between transition-all ${
-                        consultaDoDia ? 'border-emerald-100 bg-emerald-50/20 shadow-xs' : 'border-slate-100 bg-white'
-                      }`}
-                    >
-                      <span className={`text-xs font-bold ${consultaDoDia ? 'text-[#52B788]' : 'text-slate-400'}`}>
-                        {diaAtual}
-                      </span>
-
-                      {consultaDoDia && (
-                        <button
-                          type="button"
-                          onClick={() => setSelectedAppointment(consultaDoDia)}
-                          className="w-full bg-[#52B788] hover:bg-[#409A70] text-white text-[10px] font-bold py-1 px-2 rounded-lg text-left flex flex-col justify-between truncate transition-all mt-1 cursor-pointer"
-                        >
-                          <span className="truncate block w-full">{getParticipantName(consultaDoDia)}</span>
-                          <span className="text-[9px] opacity-90 mt-0.5 block">
-                            {new Date(consultaDoDia.startsAt).getUTCHours().toString().padStart(2, '0')}:00h
-                          </span>
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            {/* Componente do Calendário Isolado */}
+            <CalendarView 
+              appointments={appointments} 
+              onSelectAppointment={setSelectedAppointment} 
+            />
 
             {/* Bloco do Histórico */}
             <div className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm flex flex-col text-left">
@@ -263,36 +175,52 @@ export default function Agenda() {
               </div>
 
               {historyAppointments.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex flex-wrap gap-4 w-full">
                   {historyAppointments.map((histApp) => (
                     <div 
                       key={histApp.id} 
-                      className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl flex flex-col justify-between gap-3 hover:border-slate-200 transition-all"
+                      className="flex-1 min-w-[260px] p-4 bg-slate-50/50 border border-slate-100 rounded-2xl flex flex-col justify-between gap-3 hover:border-slate-200 transition-all"
                     >
-                      <div className="flex justify-between items-start gap-2">
-                        <div>
-                          <h4 className="text-sm font-bold text-slate-800 truncate max-w-[180px]">
+                      <div className="flex justify-between items-start gap-3">
+                        <div className="min-w-0 flex-1 text-left">
+                          <h4 className="text-sm font-bold text-slate-800 truncate">
                             {getParticipantName(histApp)}
                           </h4>
-                          <p className="text-xs text-slate-400 mt-0.5">{histApp.professional?.specialty}</p>
+                          <p className="text-xs text-slate-400 mt-0.5 truncate">
+                            {histApp.professional?.specialty || "Psicologia"}
+                          </p>
+
+                          {histApp.status === 'CANCELED' && histApp.cancellationReason && (
+                            <div className="mt-2 p-2 bg-red-50/70 border border-red-100 rounded-xl text-left">
+                              <p className="text-[11px] font-bold text-red-700">Motivo do cancelamento:</p>
+                              <p className="text-xs text-red-600 italic">"{histApp.cancellationReason}"</p>
+                            </div>
+                          )}
+
                         </div>
-                        {getStatusBadge(histApp.status)}
+                        <div className="shrink-0">
+                          {getStatusBadge(histApp.status)}
+                        </div>
                       </div>
 
-                      <div className="flex items-center justify-between pt-2.5 border-t border-slate-200/60 text-xs text-slate-500 font-medium">
-                        <div className="flex items-center gap-1.5">
-                          <CalendarIcon size={13} className="text-slate-400" />
-                          <span>{new Date(histApp.startsAt).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}</span>
-                          <Clock size={13} className="text-slate-400 ml-2" />
-                          <span>{new Date(histApp.startsAt).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</span>
+                      <div className="flex items-center justify-between pt-2.5 border-t border-slate-200/60 text-xs text-slate-500 font-medium gap-2">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <div className="flex items-center gap-1">
+                            <CalendarIcon size={13} className="text-slate-400" />
+                            <span>{new Date(histApp.startsAt).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock size={13} className="text-slate-400 ml-1" />
+                            <span>{new Date(histApp.startsAt).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</span>
+                          </div>
                         </div>
 
                         {histApp.status === 'COMPLETED' && (
                           <button 
                             onClick={() => handleDownloadCertificate(histApp.id)}
-                            className="flex items-center gap-1 text-blue-600 hover:text-blue-700 font-bold transition-all bg-white shadow-xs border border-slate-100 px-2 py-1 rounded-lg text-[11px] cursor-pointer"
+                            className="flex items-center gap-1 text-blue-600 hover:text-blue-700 font-bold transition-all bg-white shadow-xs border border-slate-100 px-2 py-1 rounded-lg text-[11px] cursor-pointer shrink-0"
                           >
-                            <FileText size={12} /> PDF
+                            <FileText size={12} /> Comprovante
                           </button>
                         )}
                       </div>

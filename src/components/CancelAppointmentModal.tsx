@@ -6,7 +6,7 @@ interface Appointment {
     id: string;
     startsAt: string;
     endsAt: string;
-    status: string;
+    status: 'SCHEDULED' | 'RESCHEDULE_REQUESTED' | 'COMPLETED' | 'CANCELED' | 'NO_SHOW' | string;
     patientId: string;
     professionalId: string;
 }

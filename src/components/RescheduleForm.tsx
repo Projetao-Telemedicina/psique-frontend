@@ -39,7 +39,7 @@ export default function RescheduleForm({ onSubmit, loading, role }: RescheduleFo
                 </div>
             </div>
 
-            {/* 2. SELEÇÃO DE HORÁRIO (INPUT DIRETO SEM DEPENDER DE REQUEST) */}
+            {/* 2. SELEÇÃO DE HORÁRIO */}
             <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                     Escolha o Novo Horário

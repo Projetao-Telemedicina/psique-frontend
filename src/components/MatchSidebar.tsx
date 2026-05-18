@@ -12,52 +12,59 @@ export const MatchSidebar: React.FC<MatchSidebarProps> = ({ progress, currentSte
       style={{
         width: '281px', 
         height: '100vh',
-        background: 'linear-gradient(180deg, #3599D8 0%, #5BB38A 100%)',
+        background: 'linear-gradient(359deg, #3599D8 -50.97%, #5BB38A 99.09%)',
         display: 'flex',
         flexDirection: 'column',
-        padding: '40px 24px 48px 24px',
+        padding: '24px 24px 48px 24px', 
         flexShrink: 0,
         position: 'relative',
         boxSizing: 'border-box'
       }}
     >
-      {/* --- Container da Logo --- */}
+      {/* Espaçador superior para garantir a centralização vertical */}
+      <div style={{ flex: 1 }} />
+
+      {/* --- Bloco Único da Identidade Visual --- */}
       <div 
         style={{ 
           display: 'flex', 
           flexDirection: 'column', 
           alignItems: 'center', 
-          marginTop: '70px',
           width: '100%'
         }}
       >
-        <img
-          src="/psique-logo-white.svg" 
-          alt="Psique Logo"
-          style={{ 
-            width: '190px', 
-            height: 'auto', 
-            objectFit: 'contain' 
-          }}
-        />
-        {/* --- Texto Match Maior e Destacado --- */}
+        {/* Caixa ampliada para dar o destaque máximo à logo da borboleta */}
+        <div style={{ width: '240px', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <img
+            src="/psique-logo-white.svg" 
+            alt="Psique Logo"
+            style={{ 
+              width: '100%',  
+              height: '100%', 
+              objectFit: 'contain'
+            }}
+          />
+        </div>
+        
+        {/* Texto Match menor, atuando estritamente como subtítulo da logo */}
         <p
           style={{
             color: '#ffffff',
             fontFamily: "'Poppins', sans-serif",
             fontSize: '32px', 
-            fontWeight: '600',
-            margin: '-22px 0 0 0', 
-            letterSpacing: '-0.5px',
+            fontWeight: '700', 
+            margin: '-20px 0 0 0', 
+            letterSpacing: '0px',
             opacity: 0.95,
-            textAlign: 'center'
+            textAlign: 'center',
+            lineHeight: '1'
           }}
         >
           Match
         </p>
       </div>
 
-      {/* Espaçador para empurrar o progresso para o rodapé */}
+      {/* Espaçador inferior */}
       <div style={{ flex: 1 }} />
 
       {/* --- Bloco de Progresso --- */}
@@ -84,7 +91,7 @@ export const MatchSidebar: React.FC<MatchSidebarProps> = ({ progress, currentSte
           />
         </div>
         
-        <p style={{ fontSize: '12px', fontWeight: '500', opacity: 0.9, marginTop: '10px', margin: '10px 0 0 0' }}>
+        <p style={{ fontSize: '12px', fontWeight: '500', opacity: 0.9, margin: '10px 0 0 0' }}>
           Pergunta {currentStep} de {totalSteps}
         </p>
       </div>
@@ -94,7 +101,7 @@ export const MatchSidebar: React.FC<MatchSidebarProps> = ({ progress, currentSte
         style={{
           position: 'absolute',
           right: '-18px',
-          top: '46%',
+          top: '50%', 
           transform: 'translateY(-50%)',
           width: '36px',
           height: '36px',

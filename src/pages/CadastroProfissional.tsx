@@ -52,8 +52,9 @@ function CadastroProfissional() {
         }
 
         setLoading(true);
-
-        const { crp, ...userData } = formData;
+        
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { crp, confirmPassword, ...userData } = formData;
 
         const payload = {
             ...userData,
