@@ -1,0 +1,284 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Sidebar from '../components/Sidebar';
+import EmergencyButton from '../components/EmergencyButton';
+import { useAuth } from '../components/AuthContext';
+
+interface UserFormat {
+    id: string;
+    name: string;
+    email: string;
+    role: 'ADMIN' | 'PROFESSIONAL' | 'PATIENT';
+    status: string;
+    bio?: string;
+    avatarUrl?: string;
+}
+
+interface ProfessionalFormat {
+    userId: string;
+    crp: string;
+    specialty: string;
+    scoreAvg: string;
+    reviewCount: number;
+    user: {
+        name: string;
+        email: string;
+        bio: string;
+        avatarUrl: string | null;
+        role: string;
+    };
+}
+
+type ListaGeralItem = UserFormat & Partial<ProfessionalFormat>;
+
+interface AppointmentData {
+    id: string;
+    status: 'SCHEDULED' | 'CANCELED' | 'COMPLETED';
+    startsAt: string;
+    endsAt: string;
+    professional: {
+        specialty: string;
+        user: {
+            name: string;
+            avatarUrl: string | null;
+        };
+    };
+}
+
+export default function TelaInicialPaciente() {
+    const navigate = useNavigate();
+    const { user, token } = useAuth();
+
+    const [nomeUsuario, setNomeUsuario] = useState('Paciente');
+    const [profissionais, setProfissionais] = useState<ProfessionalFormat[]>([]);
+    const [proximaConsulta, setProximaConsulta] = useState<AppointmentData | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    const TIPO_USUARIO = 'paciente';
+
+    useEffect(() => {
+        const carregarDadosDashboard = async () => {
+            const userId = user?.id || localStorage.getItem('userId');
+            const activeToken = token || localStorage.getItem('token');
+
+            if (!activeToken) return;
+
+            try {
+                setLoading(true);
+                const headers = { 'Authorization': `Bearer ${activeToken}` };
+
+                if (userId) {
+                    const resUser = await fetch(`/api/users/${userId}`, { headers });
+                    if (resUser.ok) {
+                        const dataUser = await resUser.json();
+                        setNomeUsuario(dataUser.name);
+                    }
+                }
+
+                const resUsersList = await fetch('/api/users?status=ACTIVE', { headers });
+                if (resUsersList.ok) {
+                    const listaGeral: ListaGeralItem[] = await resUsersList.json();
+                    const apenasProfs = listaGeral.filter(
+                        (u) => u.role === 'PROFESSIONAL' || u.user?.role === 'PROFESSIONAL'
+                    );
+
+                    const dadosFormatados: ProfessionalFormat[] = apenasProfs.map((p) => ({
+                        userId: p.userId || p.id || '',
+                        crp: p.crp || "06/000000",
+                        specialty: p.specialty || "Psicologia Clínica",
+                        scoreAvg: p.scoreAvg || "5.00",
+                        reviewCount: p.reviewCount || 0,
+                        user: {
+                            name: p.user?.name || p.name || 'Profissional',
+                            email: p.user?.email || p.email || '',
+                            bio: p.user?.bio || p.bio || "Nenhuma biografia informada.",
+                            avatarUrl: p.user?.avatarUrl || p.avatarUrl || null,
+                            role: 'PROFESSIONAL'
+                        }
+                    }));
+                    setProfissionais(dadosFormatados);
+                }
+
+                const resAppointments = await fetch('/api/appointments/me/upcoming', { headers });
+                if (resAppointments.ok) {
+                    const appointments: AppointmentData[] = await resAppointments.json();
+                    const agendada = appointments.find(app => app.status === 'SCHEDULED');
+                    if (agendada) setProximaConsulta(agendada);
+                }
+
+            } catch (error) {
+                console.error("Erro ao carregar dados da Tela Inicial:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        carregarDadosDashboard();
+    }, [user, token]);
+
+    const formatarDataConsulta = (isoString: string) => {
+        const data = new Date(isoString);
+        const opcoesData: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'long' };
+        const opcoesHora: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' };
+
+        const dataFormatada = data.toLocaleDateString('pt-BR', opcoesData);
+        const horaFormatada = data.toLocaleTimeString('pt-BR', opcoesHora);
+
+        return `${dataFormatada.charAt(0).toUpperCase() + dataFormatada.slice(1)} às ${horaFormatada}`;
+    };
+
+    const renderStarsFromScore = (scoreStr: string) => {
+        const score = Math.round(parseFloat(scoreStr || '5'));
+        return (
+            <div className="flex gap-0.5 text-amber-400">
+                {[...Array(5)].map((_, i) => (
+                    <svg key={i} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={i < score ? "currentColor" : "#C4C4C4"} className="w-4 h-4">
+                        <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clipRule="evenodd" />
+                    </svg>
+                ))}
+            </div>
+        );
+    };
+
+    const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150";
+
+    return (
+        <main className="flex h-screen w-full overflow-hidden bg-white font-sans antialiased text-slate-800">
+            <Sidebar role={TIPO_USUARIO} itemAtivo="home" />
+
+            <section className="flex flex-col flex-1 overflow-hidden px-12 py-8">
+                <header className="flex items-center justify-between mb-8 shrink-0">
+                    <div>
+                        <h1 className="text-xl font-medium text-slate-700">
+                            Bom dia, {nomeUsuario}
+                        </h1>
+                    </div>
+                    <EmergencyButton onClick={() => navigate('/emergencia')} />
+                </header>
+
+                {loading ? (
+                    <div className="flex-1 flex items-center justify-center text-gray-400">
+                        Carregando seu portal...
+                    </div>
+                ) : (
+                    <div className="flex-1 overflow-y-auto space-y-10 pr-2">
+
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+
+                            {/* Card Agenda*/}
+                            <div className="lg:col-span-5 bg-[#F2F2F2] rounded-[2rem] p-6 min-h-[260px] flex flex-col justify-start shadow-xs">
+                            {proximaConsulta ? (
+                                <div className="flex flex-col h-full gap-4">
+                                <h3 className="text-base font-bold text-slate-800 tracking-wide px-1">
+                                    Próximas consultas
+                                </h3>
+                                
+                                <div className="flex gap-4 overflow-x-auto pb-2 pr-1 scrollbar-thin">
+                                    
+                                    {/* Card Individual de Consulta */}
+                                    <div className="bg-[#EFEFEF] border border-gray-300/70 rounded-2xl p-4 min-w-[240px] flex-1 flex flex-col justify-between gap-4">
+                                    <div className="space-y-3">
+                                        <p className="font-extrabold text-sm text-slate-900">
+                                        {new Date(proximaConsulta.startsAt).toLocaleDateString('pt-BR')} às {new Date(proximaConsulta.startsAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                        </p>
+
+                                        <div className="flex justify-between items-center gap-2">
+                                        <p className="text-sm font-medium text-slate-800 truncate">
+                                            Psi. {proximaConsulta.professional.user.name}
+                                        </p>
+                                        <button 
+                                            onClick={() => navigate(`/profissional/${proximaConsulta.professional.user.name}`)}
+                                            className="text-[11px] font-medium text-gray-500 hover:text-gray-800 whitespace-nowrap transition-colors"
+                                        >
+                                            Ver Perfil &gt;
+                                        </button>
+                                        </div>
+                                    </div>
+
+                                    <button 
+                                        onClick={() => navigate(`/consultas/${proximaConsulta.id}`)}
+                                        className="w-full bg-[#A2CDB5] hover:bg-[#91BEA4] text-slate-700 font-medium text-xs py-2.5 rounded-full transition-colors shadow-xs"
+                                    >
+                                        Detalhes da consulta
+                                    </button>
+                                    </div>
+                                </div>
+                                </div>
+                            ) : (
+                                <div className="h-full flex items-center justify-center">
+                                <p className="text-gray-500 font-normal text-base tracking-wide text-center">
+                                    Nenhuma consulta agendada
+                                </p>
+                                </div>
+                            )}
+                            </div>
+
+                            {/* Seção Compatibilidade */}
+                            <div className="lg:col-span-7 flex flex-col gap-4">
+                                <div className="flex justify-between items-center px-1">
+                                    <h2 className="text-lg font-bold text-slate-800 tracking-wide">
+                                        Compatibilidade com Profissionais
+                                    </h2>
+                                    <button className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors flex items-center gap-1">
+                                        Ver mais <span className="text-xs font-bold">&gt;</span>
+                                    </button>
+                                </div>
+
+                                <div className="space-y-4">
+                                    {profissionais.slice(0, 2).map((prof) => (
+                                        <div key={prof.userId} className="flex gap-4 items-start">
+                                            <img src={prof.user.avatarUrl || DEFAULT_AVATAR} alt={prof.user.name} className="w-16 h-16 rounded-full object-cover shrink-0 shadow-sm" />
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-3">
+                                                    <h3 className="font-bold text-base text-slate-800">{prof.user.name}</h3>
+                                                    {renderStarsFromScore(prof.scoreAvg)}
+                                                </div>
+                                                <p className="text-xs text-slate-400 font-medium">{prof.specialty}</p>
+                                                <p className="text-xs text-gray-500 leading-relaxed max-w-xl line-clamp-2">
+                                                    {prof.user.bio}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Profissionais em Destaque */}
+                        <div className="flex flex-col gap-4">
+                            <div className="flex justify-between items-center px-1">
+                                <h2 className="text-lg font-bold text-slate-800 tracking-wide">
+                                    Profissionais em destaque
+                                </h2>
+                                <button className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors flex items-center gap-1">
+                                    Ver mais <span className="text-xs font-bold">&gt;</span>
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                {profissionais.slice(0, 4).map((prof) => (
+                                    <div key={prof.userId} className="bg-[#F2F2F2] rounded-[2rem] p-6 flex flex-col items-start gap-4 shadow-xs">
+                                        <div className="w-full flex justify-center">
+                                            <img src={prof.user.avatarUrl || DEFAULT_AVATAR} alt={prof.user.name} className="w-16 h-16 rounded-full object-cover shadow-xs" />
+                                        </div>
+                                        <div className="w-full flex flex-col mt-2">
+                                            <div className="flex justify-between items-center w-full">
+                                                <h3 className="font-bold text-sm text-slate-800 truncate max-w-[110px]">{prof.user.name}</h3>
+                                                {renderStarsFromScore(prof.scoreAvg)}
+                                            </div>
+                                            <span className="text-[10px] text-slate-400 font-semibold mt-0.5">{prof.specialty}</span>
+                                        </div>
+                                        <p className="text-[11px] text-gray-500 leading-relaxed line-clamp-3">
+                                            {prof.user.bio}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                    </div>
+                )}
+            </section>
+        </main>
+    );
+}

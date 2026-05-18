@@ -11,6 +11,7 @@ import VisualizarPerfilProfissional from './pages/VisualizarPerfilProfissional'
 import ValidacaoCadastro from './pages/ValidacaoCadastro.tsx'
 import { AuthProvider } from './components/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import TelaInicialPaciente from './pages/TelaInicialCliente.tsx';
 
 function App() {
   return (
@@ -47,6 +48,7 @@ function App() {
           <Route path='/admin/validacao' element={<ValidacaoCadastro />} />
 
           {/* UC06 - Visualizar cadastro de paciente */}
+          <Route path='/paciente/home/' element={<TelaInicialPaciente />} />
           <Route path='/perfil/paciente' element={<VisualizarPerfilPaciente />} />
           <Route path='/perfil/paciente/:id' element={<VisualizarPerfilPaciente />} />
 
