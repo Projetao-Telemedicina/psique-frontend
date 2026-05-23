@@ -148,7 +148,9 @@ export default function Agenda() {
             <h1 className="text-3xl font-bold text-[#1E293B]">Agenda</h1>
             <p className="text-slate-500 text-sm">Sincronizada com o seu Google Agenda</p>
           </div>
-          <EmergencyButton onClick={() => console.log('Botão de pânico disparado')} />
+          {getSidebarRole() !== 'profissional' && (
+            <EmergencyButton onClick={() => console.log('Botão de pânico disparado')} />
+          )}
         </header>
 
         <div className="flex flex-1 overflow-hidden">
