@@ -1,7 +1,6 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { RotateCcw, Send } from "lucide-react";
-import Sidebar from "../components/Sidebar";
-import { useAuth } from "../components/AuthContext";
+import Sidebar from '../components/Sidebar';
 
 type MoodId =
   | "feliz"
@@ -45,6 +44,27 @@ const sleepOptions: SleepOption[] = [
   "Dormi menos que 4 horas",
 ];
 
+//integracao com backend//
+const moodToFeeling = {
+  feliz: "HAPPY",
+  amedrontado: "SCARED",
+  triste: "SAD",
+  ansioso: "ANXIOUS",
+  raivoso: "ANGRY",
+  calmo: "CALM",
+  tranquilo: "CALM",
+  esperancoso: "HOPEFUL",
+  cansado: "EXHAUSTED",
+} as const;
+
+const sleepToQuality = {
+  "Dormi 8 horas ou mais": "EIGHT_OR_MORE",
+  "Dormi entre 6 a 8 horas": "SIX_TO_EIGHT",
+  "Dormi entre 4 a 5 horas": "FOUR_TO_FIVE",
+  "Dormi menos que 4 horas": "LESS_THAN_FOUR",
+} as const;
+//termina aqui
+
 type MoodButtonProps = {
   mood: Mood;
   selectedMood: MoodId;
@@ -76,35 +96,48 @@ function MoodButton({ mood, selectedMood, onSelectMood }: MoodButtonProps) {
 }
 
 export default function Diario() {
-  const { user } = useAuth();
-
   const [selectedMood, setSelectedMood] = useState<MoodId>("feliz");
   const [selectedSleep, setSelectedSleep] = useState<SleepOption>(
     "Dormi 8 horas ou mais"
   );
   const [diaryText, setDiaryText] = useState<string>(
-    "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s. Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s. Lorem Ipsum is simply dummy text of the printing and typesetting industry.\n\nLorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s. Lorem Ipsum is simply dummy text of the printing and typesetting industry."
+    "Escreva aqui como foi o seu dia..."
   );
 
-  function handleSubmitDiary() {
-    console.log({
-      mood: selectedMood,
-      sleep: selectedSleep,
-      text: diaryText,
-    });
+  //botao e funcao do botao
+  async function handleSubmitDiary() {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    console.error("Usuário não autenticado.");
+    return;
   }
 
-  const getSidebarRole = (): "paciente" | "profissional" | "administrador" => {
-    if (user?.role === "PROFESSIONAL") return "profissional";
-    if (user?.role === "ADMIN") return "administrador";
-    return "paciente";
-  };
+  const response = await fetch("/api/diaries", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      feeling: moodToFeeling[selectedMood],
+      sleepQuality: sleepToQuality[selectedSleep],
+      content: diaryText,
+    }),
+  });
+
+  if (!response.ok) {
+    console.error("Erro ao salvar diário.");
+    return;
+  }
+
+  const data = await response.json();
+  console.log("Diário salvo:", data);
+}
+//
 
   return (
-    <main className="flex h-screen w-full overflow-hidden bg-[#F8FAFC]">
-      <Sidebar role={getSidebarRole()} itemAtivo="diario" />
-
-      <section className="flex-1 overflow-y-auto bg-[#f7f7f7] px-6 py-10 text-left text-[#171717] md:px-10 lg:px-12">
+    <section className="min-h-screen w-full bg-[#f7f7f7] px-6 py-10 text-[#171717] md:px-10 lg:px-12">
       <header className="mb-8 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-[13px] font-bold">Diário</h1>
@@ -194,7 +227,6 @@ export default function Diario() {
           </button>
         </div>
       </div>
-      </section>
-    </main>
+    </section>
   );
 }
