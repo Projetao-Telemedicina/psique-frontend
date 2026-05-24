@@ -21,6 +21,7 @@ interface ProfessionalFormat {
     specialty: string;
     scoreAvg: string;
     reviewCount: number;
+    tags?: string[];
     user: {
         name: string;
         email: string;
@@ -32,8 +33,58 @@ interface ProfessionalFormat {
 
 type ListaGeralItem = UserFormat & Partial<ProfessionalFormat>;
 
-function CompatibilidadeComProfissionais() {
+function LinhaProfissional({ prof, renderStars, defaultAvatar }: { 
+    prof: ProfessionalFormat, 
+    renderStars: (score: string) => React.ReactNode,
+    defaultAvatar: string 
+}) {
+    const tagsExemplo = prof.tags || ["Tag1", "Tag1", "Tag1", "Tag1", "Tag1", "Tag1"];
 
+    return (
+        <Link
+            to={`/paciente/profissional/${prof.userId}`}
+            className="flex flex-col gap-3 p-4 rounded-2xl transition-all duration-200 border border-gray-100 hover:bg-slate-50 hover:shadow-md cursor-pointer group bg-white"
+        >
+            {/* Bloco Superior: Imagem, Nome, Estrelas e Tags */}
+            <div className="flex gap-4 items-start">
+                <img
+                    src={prof.user.avatarUrl || defaultAvatar}
+                    alt={prof.user.name}
+                    className="w-20 h-20 rounded-2xl object-cover shrink-0 shadow-sm border border-gray-100"
+                />
+
+                {/* Conteúdo à direita da foto */}
+                <div className="flex flex-col gap-1.5 w-full min-w-0">
+                    {/* Nome + Estrelas */}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <h3 className="font-bold text-lg text-slate-800 group-hover:text-blue-600 transition-colors truncate max-w-[160px]">
+                            {prof.user.name}
+                        </h3>
+                        {renderStars(prof.scoreAvg)}
+                    </div>
+
+                    <div className="flex flex-wrap gap-1.5">
+                        {tagsExemplo.slice(0, 6).map((tag, index) => (
+                            <span
+                                key={index}
+                                className="bg-[#A3D1C1] text-[#4A7A6A] text-[11px] font-semibold py-1 px-3 rounded-full min-w-[60px] text-center truncate"
+                            >
+                                {tag}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Descrição */}
+            <p className="text-xs text-gray-500 leading-relaxed font-normal line-clamp-3">
+                {prof.user.bio}
+            </p>
+        </Link>
+    );
+}
+
+function CompatibilidadeComProfissionais() {
     const navigate = useNavigate();
     const { user, token } = useAuth();
 
@@ -56,7 +107,6 @@ function CompatibilidadeComProfissionais() {
                 if (resUsersList.ok) {
                     const listaGeral: ListaGeralItem[] = await resUsersList.json();
 
-                    // Filtra apenas quem tem role de profissional
                     const apenasProfs = listaGeral.filter(
                         (u) => u.role === "PROFESSIONAL" || u.user?.role === "PROFESSIONAL"
                     );
@@ -70,7 +120,7 @@ function CompatibilidadeComProfissionais() {
                         user: {
                             name: p.user?.name || p.name || "Profissional",
                             email: p.user?.email || p.email || "",
-                            bio: p.user?.bio || p.bio || "Nenhuma biografia informada.",
+                            bio: p.user?.bio || p.bio || "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s. Lorem Ipsum has been the industry's standard.",
                             avatarUrl: p.user?.avatarUrl || p.avatarUrl || null,
                             role: "PROFESSIONAL",
                         },
@@ -98,7 +148,7 @@ function CompatibilidadeComProfissionais() {
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
                         fill={i < score ? "currentColor" : "#C4C4C4"}
-                        className="w-4 h-4"
+                        className="w-3.5 h-3.5"
                     >
                         <path
                             fillRule="evenodd"
@@ -113,11 +163,9 @@ function CompatibilidadeComProfissionais() {
 
     return (
         <main className="flex h-screen w-full overflow-hidden bg-white font-sans antialiased text-slate-800">
-
             <Sidebar role={TIPO_USUARIO} itemAtivo="home" />
 
             <section className="flex flex-col flex-1 overflow-hidden px-12 py-8 relative">
-
                 <div className="flex items-center justify-between mb-6 shrink-0 w-full">
                     <Link
                         to="/paciente/home"
@@ -140,38 +188,26 @@ function CompatibilidadeComProfissionais() {
                         Carregando lista de profissionais...
                     </div>
                 ) : (
-                    <div className="flex-1 overflow-y-auto space-y-6 pr-2 pl-[12px]">
+                    <div className="flex-1 overflow-y-auto pr-2 pl-[12px] grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 content-start items-start">
                         {profissionais.map((prof) => (
-                            <div key={prof.userId} className="flex gap-4 items-start border-b border-gray-100 pb-5 last:border-0">
-                                <img
-                                    src={prof.user.avatarUrl || DEFAULT_AVATAR}
-                                    alt={prof.user.name}
-                                    className="w-16 h-16 rounded-full object-cover shrink-0 shadow-sm"
-                                />
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-3">
-                                        <h3 className="font-bold text-base text-slate-800">{prof.user.name}</h3>
-                                        {renderStarsFromScore(prof.scoreAvg)}
-                                    </div>
-                                    <p className="text-xs text-slate-400 font-medium">{prof.specialty}</p>
-                                    <p className="text-xs text-gray-500 leading-relaxed max-w-2xl line-clamp-2">
-                                        {prof.user.bio}
-                                    </p>
-                                </div>
-                            </div>
+                            <LinhaProfissional 
+                                key={prof.userId} 
+                                prof={prof} 
+                                renderStars={renderStarsFromScore}
+                                defaultAvatar={DEFAULT_AVATAR}
+                            />
                         ))}
 
                         {profissionais.length === 0 && (
-                            <p className="text-sm text-gray-400 italic">
+                            <p className="text-sm text-gray-400 italic col-span-full">
                                 Nenhum profissional disponível para compatibilidade no momento.
                             </p>
                         )}
                     </div>
                 )}
-
             </section>
         </main>
     );
 }
 
-export default CompatibilidadeComProfissionais
+export default CompatibilidadeComProfissionais;

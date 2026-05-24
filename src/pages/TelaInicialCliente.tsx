@@ -27,6 +27,8 @@ interface ProfessionalFormat {
         avatarUrl: string | null;
         role: string;
     };
+    // Adicionar ao back
+    tags?: string[];
 }
 
 type ListaGeralItem = UserFormat & Partial<ProfessionalFormat>;
@@ -37,8 +39,8 @@ interface AppointmentData {
     startsAt: string;
     endsAt: string;
     professional: {
-        id?: string;    
-        userId?: string; 
+        id?: string;
+        userId?: string;
         specialty: string;
         user: {
             name: string;
@@ -133,14 +135,13 @@ export default function TelaInicialPaciente() {
 
     const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150";
 
-
     const idProfConsulta = proximaConsulta?.professional.userId || proximaConsulta?.professional.id;
 
     return (
         <main className="flex h-screen w-full overflow-hidden bg-white font-sans antialiased text-slate-800">
             <Sidebar role={TIPO_USUARIO} itemAtivo="home" />
 
-            <section className="flex flex-col flex-1 overflow-hidden px-12 py-8">
+            <section className="flex flex-col flex-1 overflow-hidden px-12 py-8 pb-0">
                 <header className="flex items-center justify-between mb-8 shrink-0">
                     <div>
                         <h1 className="text-xl font-medium text-slate-700">
@@ -181,7 +182,6 @@ export default function TelaInicialPaciente() {
                                                     </div>
                                                 </div>
 
-                                                {/* Agora este botão leva direto para o perfil do profissional responsável por essa consulta */}
                                                 <button
                                                     onClick={() => {
                                                         if (idProfConsulta) {
@@ -192,7 +192,7 @@ export default function TelaInicialPaciente() {
                                                     }}
                                                     className="w-full bg-[#A2CDB5] hover:bg-[#91BEA4] text-slate-700 font-medium text-xs py-2.5 rounded-full transition-colors shadow-xs"
                                                 >
-                                                    Acessar perfil do profissional
+                                                    Detalhes da consulta
                                                 </button>
                                             </div>
                                         </div>
@@ -223,26 +223,65 @@ export default function TelaInicialPaciente() {
                                     </Link>
                                 </div>
 
-                                <div className="space-y-4">
-                                    {profissionais.slice(0, 2).map((prof) => (
-                                        <Link 
-                                            key={prof.userId} 
-                                            to={`/paciente/perfil_do_profissional/${prof.userId}`}
-                                            className="flex gap-4 items-start hover:bg-slate-50 p-2 rounded-2xl transition-colors group cursor-pointer block"
-                                        >
-                                            <img src={prof.user.avatarUrl || DEFAULT_AVATAR} alt={prof.user.name} className="w-16 h-16 rounded-full object-cover shrink-0 shadow-sm" />
-                                            <div className="space-y-1">
-                                                <div className="flex items-center gap-3">
-                                                    <h3 className="font-bold text-base text-slate-800 group-hover:text-slate-900 transition-colors">{prof.user.name}</h3>
-                                                    {renderStarsFromScore(prof.scoreAvg)}
+                                <div className="flex flex-col gap-4 w-full">
+                                    {profissionais.slice(0, 2).map((prof) => {
+                                        {/* 
+                                            MOCK TEMPORÁRIO ENQUANTO NÂO TEM NO BACK
+                                        */}
+                                        const tagsExemplo = prof.tags || ["Ansiedade", "Depressão", "TCC", "Casal", "LGBT+", "Trauma"];
+
+                                        return (
+                                            <Link
+                                                key={prof.userId}
+                                                to={`/paciente/perfil_do_profissional/${prof.userId}`}
+                                                className="flex flex-row items-center gap-5 p-4 rounded-2xl transition-all duration-200 border border-gray-100 hover:bg-slate-50 hover:shadow-sm cursor-pointer group bg-white w-full"
+                                            >
+                                                <img
+                                                    src={prof.user.avatarUrl || DEFAULT_AVATAR}
+                                                    alt={prof.user.name}
+                                                    className="w-20 h-20 rounded-2xl object-cover shrink-0 shadow-sm border border-gray-100"
+                                                />
+
+                                                <div className="flex flex-col justify-center gap-1 flex-1 min-w-0">
+                                                    <div className="flex items-center gap-3">
+                                                        <h3 className="font-bold text-lg text-slate-800 group-hover:text-blue-600 transition-colors truncate max-w-[200px]">
+                                                            {prof.user.name}
+                                                        </h3>
+                                                        <div className="shrink-0">
+                                                            {renderStarsFromScore(prof.scoreAvg)}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* 
+                                                        MOCK TEMPORÁRIO ENQUANTO NÂO TEM NO BACK
+                                                    */}
+                                                    {tagsExemplo && tagsExemplo.length > 0 ? (
+                                                        /* Layout Estilo Maria Laura: Tags + Início da Bio na mesma linha */
+                                                        <div className="flex items-center gap-4 w-full min-w-0">
+                                                            <div className="flex gap-1.5 shrink-0">
+                                                                {tagsExemplo.slice(0, 3).map((tag, index) => (
+                                                                    <span
+                                                                        key={index}
+                                                                        className="bg-[#A3D1C1] text-[#4A7A6A] text-[11px] font-semibold py-1 px-3 rounded-full min-w-[55px] text-center"
+                                                                    >
+                                                                        {tag}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                            <p className="text-xs text-gray-500 font-normal truncate flex-1">
+                                                                {prof.user.bio}
+                                                            </p>
+                                                        </div>
+                                                    ) : (
+                                                        /* Layout Alternativo: Apenas texto da Bio cheia */
+                                                        <p className="text-xs text-gray-500 font-normal truncate w-full">
+                                                            {prof.user.bio}
+                                                        </p>
+                                                    )}
                                                 </div>
-                                                <p className="text-xs text-slate-400 font-medium">{prof.specialty}</p>
-                                                <p className="text-xs text-gray-500 leading-relaxed max-w-xl line-clamp-2">
-                                                    {prof.user.bio}
-                                                </p>
-                                            </div>
-                                        </Link>
-                                    ))}
+                                            </Link>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </div>
@@ -265,27 +304,54 @@ export default function TelaInicialPaciente() {
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                                {profissionais.slice(0, 4).map((prof) => (
-                                    <Link 
-                                        key={prof.userId} 
-                                        to={`/paciente/perfil_do_profissional/${prof.userId}`}
-                                        className="bg-[#F2F2F2] rounded-[2rem] p-6 flex flex-col items-start gap-4 shadow-xs hover:shadow-md transition-all cursor-pointer group"
-                                    >
-                                        <div className="w-full flex justify-center">
-                                            <img src={prof.user.avatarUrl || DEFAULT_AVATAR} alt={prof.user.name} className="w-16 h-16 rounded-full object-cover shadow-xs group-hover:scale-105 transition-transform duration-200" />
-                                        </div>
-                                        <div className="w-full flex flex-col mt-2">
-                                            <div className="flex justify-between items-center w-full">
-                                                <h3 className="font-bold text-sm text-slate-800 truncate max-w-[110px] group-hover:text-slate-900 transition-colors">{prof.user.name}</h3>
-                                                {renderStarsFromScore(prof.scoreAvg)}
+                                {profissionais.slice(0, 4).map((prof) => {
+                                    /* 
+                                       MOCK TEMPORÁRIO ENQUANTO NÂO TEM NO BACK
+                                    */
+                                    const tagsProfissional = prof.tags || ["Ansiedade", "TCC", "Depressão", "Luto", "Fobia", "Estresse"];
+
+                                    return (
+                                        <Link
+                                            key={prof.userId}
+                                            to={`/paciente/perfil_do_profissional/${prof.userId}`}
+                                            className="bg-[#EFEFEF] rounded-[32px] p-8 flex flex-col items-center text-center shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group border border-gray-100/40"
+                                        >
+                                            <div className="w-24 h-24 rounded-full overflow-hidden mb-5 shrink-0 shadow-md bg-white border border-gray-200">
+                                                <img
+                                                    src={prof.user.avatarUrl || DEFAULT_AVATAR}
+                                                    alt={prof.user.name}
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                />
                                             </div>
-                                            <span className="text-[10px] text-slate-400 font-semibold mt-0.5">{prof.specialty}</span>
-                                        </div>
-                                        <p className="text-[11px] text-gray-500 leading-relaxed line-clamp-3">
-                                            {prof.user.bio}
-                                        </p>
-                                    </Link>
-                                ))}
+
+                                            <div className="w-full flex items-center justify-between gap-2 mb-4 px-1">
+                                                <h3 className="font-bold text-base text-[#2D3748] tracking-tight truncate max-w-[55%] text-left">
+                                                    {prof.user.name}
+                                                </h3>
+                                                <div className="shrink-0">
+                                                    {renderStarsFromScore(prof.scoreAvg)}
+                                                </div>
+                                            </div>
+
+                                            {tagsProfissional && tagsProfissional.length > 0 && (
+                                                <div className="grid grid-cols-3 gap-1.5 w-full mb-5">
+                                                    {tagsProfissional.slice(0, 6).map((tag, idx) => (
+                                                        <span
+                                                            key={idx}
+                                                            className="bg-[#A3D1C1] text-[#4A7A6A] text-[10px] font-bold py-1.5 px-1 rounded-full text-center truncate"
+                                                        >
+                                                            {tag}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            <p className="text-xs text-[#5A6A85] leading-relaxed text-left w-full line-clamp-5 font-normal tracking-wide">
+                                                {prof.user.bio || "Nenhuma biografia informada no momento."}
+                                            </p>
+                                        </Link>
+                                    );
+                                })}
                             </div>
                         </div>
 

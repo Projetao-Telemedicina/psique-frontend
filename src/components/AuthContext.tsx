@@ -48,24 +48,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const navigate = useNavigate();
 
     const login = (newToken: string) => {
-        localStorage.setItem('token', newToken);
         const decodedUser = getUserFromToken(newToken);
         
+        if (!decodedUser) {
+            console.error("Não foi possível autenticar: Token inválido.");
+            return;
+        }
+
+        localStorage.setItem('token', newToken);
+        localStorage.setItem('userId', decodedUser.id); 
+        localStorage.setItem('userRole', decodedUser.role);
+
         setToken(newToken);
         setUser(decodedUser);
 
-        // Redirecionamento baseado na Role
-        if (decodedUser?.role === 'ADMIN') {
+        if (decodedUser.role === 'ADMIN') {
             navigate('/admin/validacao');
-        } else if (decodedUser?.role === 'PATIENT') {
+        } else if (decodedUser.role === 'PATIENT') {
             navigate('/perfil/paciente');
-        } else if (decodedUser?.role === 'PROFESSIONAL') {
+        } else if (decodedUser.role === 'PROFESSIONAL') {
             navigate('/perfil/profissional');
         }
     };
 
     const logout = () => {
         localStorage.removeItem('token');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userRole');
         setToken(null);
         setUser(null);
         navigate('/login');
