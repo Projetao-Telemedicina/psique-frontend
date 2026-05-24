@@ -13,6 +13,8 @@ import QuestionarioMatch from './pages/QuestionarioMatch.tsx';
 import { AuthProvider } from './components/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Agenda from './pages/Agenda.tsx';
+import Diario from './pages/Diario.tsx';
+
 
 function App() {
   return (
@@ -57,6 +59,10 @@ function App() {
           <Route path='/perfil/profissional' element={<VisualizarPerfilProfissional />} />
           <Route path='/perfil/profissional/:id' element={<VisualizarPerfilProfissional />} />
           
+          {/*UC08 Diario*/}
+          <Route path='/Diario' element={<Diario />} />
+
+
           <Route path='/match' element={<QuestionarioMatch />} />
           <Route path='/agenda' element={<Agenda />} />
         </Route>
