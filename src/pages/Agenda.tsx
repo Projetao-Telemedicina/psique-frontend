@@ -243,9 +243,6 @@ export default function Agenda() {
 
           </div>
 
-          {/* ==========================================
-          // MUDANÇA: Substituição do HTML do painel lateral direito pelo novo componente estruturado
-          // ========================================== */}
           {selectedAppointment && (
             <AppointmentSidebarDetails 
               appointment={selectedAppointment}
