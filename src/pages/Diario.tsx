@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { RotateCcw, Send } from "lucide-react";
+import Sidebar from "../components/Sidebar";
+import { useAuth } from "../components/AuthContext";
 
 type MoodId =
   | "feliz"
@@ -74,6 +76,8 @@ function MoodButton({ mood, selectedMood, onSelectMood }: MoodButtonProps) {
 }
 
 export default function Diario() {
+  const { user } = useAuth();
+
   const [selectedMood, setSelectedMood] = useState<MoodId>("feliz");
   const [selectedSleep, setSelectedSleep] = useState<SleepOption>(
     "Dormi 8 horas ou mais"
@@ -90,8 +94,17 @@ export default function Diario() {
     });
   }
 
+  const getSidebarRole = (): "paciente" | "profissional" | "administrador" => {
+    if (user?.role === "PROFESSIONAL") return "profissional";
+    if (user?.role === "ADMIN") return "administrador";
+    return "paciente";
+  };
+
   return (
-    <section className="min-h-screen w-full bg-[#f7f7f7] px-6 py-10 text-[#171717] md:px-10 lg:px-12">
+    <main className="flex h-screen w-full overflow-hidden bg-[#F8FAFC]">
+      <Sidebar role={getSidebarRole()} itemAtivo="diario" />
+
+      <section className="flex-1 overflow-y-auto bg-[#f7f7f7] px-6 py-10 text-left text-[#171717] md:px-10 lg:px-12">
       <header className="mb-8 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-[13px] font-bold">Diário</h1>
@@ -181,6 +194,7 @@ export default function Diario() {
           </button>
         </div>
       </div>
-    </section>
+      </section>
+    </main>
   );
 }
