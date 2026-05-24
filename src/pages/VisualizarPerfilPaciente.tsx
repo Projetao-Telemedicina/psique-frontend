@@ -407,7 +407,7 @@ export default function VisualizarPerfilPaciente() {
               </div>
             </article>
 
-            <aside className={`w-[400px] flex flex-col gap-6 transition-opacity ${isEditing ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+            <aside className={`w-[400px] flex flex-col gap-6 sticky top-0 transition-opacity ${isEditing ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
               <SideCard title="Carteira Virtual" icon={<Wallet className="text-blue-500" />}>
                 <div className="bg-slate-50 rounded-2xl p-5 mb-4 text-left">
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Saldo Disponível</p>
