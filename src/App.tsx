@@ -17,9 +17,10 @@ import ProfissionaisEmDestaque from './pages/ProfissionaisEmDestaque.tsx';
 import VisualizarPerfilPaciente from './pages/VisualizarPerfilPaciente'
 
 import ValidacaoCadastro from './pages/ValidacaoCadastro.tsx'
-
 import './App.css'
 import MarcarComProfissional from './pages/MarcarComProfissional.tsx';
+import QuestionarioMatch from './pages/QuestionarioMatch.tsx';
+import Agenda from './pages/Agenda.tsx';
 
 
 function App() {
@@ -51,6 +52,7 @@ function App() {
         <Route path='/cadastro' element={<Cadastro />} />
         <Route path='/cadastro/cliente' element={<CadastroCliente />} />
         <Route path='/cadastro/profissional' element={<CadastroProfissional />} />
+        
 
         {/* Private Routes */}
         <Route element={<ProtectedRoute />}>
@@ -67,6 +69,9 @@ function App() {
           {/* UC07 - Visualizar cadastro de profissional */}
           <Route path='/perfil/profissional' element={<VisualizarPerfilProfissional />} />
           <Route path='/perfil/profissional/:id' element={<VisualizarPerfilProfissional />} />
+          
+          <Route path='/match' element={<QuestionarioMatch />} />
+          <Route path='/agenda' element={<Agenda />} />
         </Route>
       </Routes>
     </AuthProvider>

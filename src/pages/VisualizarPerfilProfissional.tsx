@@ -113,8 +113,47 @@ export default function VisualizarPerfilProfissional() {
     carregarDadosProfissional();
   }, [token, user, navigate]);
 
+  const validarCampos = (): boolean => {
+    if (!dados) return false;
+    const { cep, city, state, number } = dados.user;
+
+    // 1. Validação do CEP (Apenas números e exatamente 8 dígitos após a limpeza)
+    const cepLimpo = String(cep || "").replace(/\D/g, "");
+    if (cepLimpo.length !== 8) {
+      toast.error("O campo CEP deve conter exatamente 8 números válidos.");
+      return false;
+    }
+
+    // 2. Validação de Cidade (Não pode aceitar números)
+    const regexCidade = /^[A-Za-zÀ-ÿçÇ__]+$/;
+    if (!regexCidade.test(city.trim())) {
+      toast.error("O campo Cidade deve conter apenas caracteres alfabéticos.");
+      return false;
+    }
+
+    // 3. Validação de Estado (Apenas letras, sem emojis, caracteres especiais ou números - Idealmente UF com 2 letras)
+    const stateTrimmed = state.trim();
+    const regexEstado = /^[A-Za-zÀ-ÿ\s]{2,}$/; // Mínimo de 2 letras (aceita tanto "PE" quanto "Pernambuco")
+    if (!regexEstado.test(stateTrimmed)) {
+      toast.error("O campo Estado inválido. Use apenas caracteres alfabéticos (Ex: PE ou Pernambuco).");
+      return false;
+    }
+
+    // 4. Validação do Número (Deve conter pelo menos um dígito numérico ou aceitar variações padrão como "S/N")
+    // Impede textos puramente inválidos ou vazios cheios de lixo
+    const numberTrimmed = number.trim();
+    const regexNumero = /^[0-9]+[A-Za-z]?$|^[sS]\/[nN]$|^[sS]em\s[nN]úmero$/;
+    if (!regexNumero.test(numberTrimmed)) {
+      toast.error("O campo Número deve ser um valor numérico válido (ex: 123, 123B) ou 'S/N'.");
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSalvar = async () => {
     if (!dados) return;
+    if (!validarCampos()) return;
     setSaving(true);
     const activeToken = token || localStorage.getItem('token');
     const targetUserId = dados.user.id || user?.id || localStorage.getItem('userId');
@@ -307,7 +346,8 @@ export default function VisualizarPerfilProfissional() {
                         Quer ajustar seu público?
                       </span>
                       <button 
-                        onClick={() => navigate('/questionario-match')}
+                        type="button"
+                        onClick={() => navigate('/match')}
                         className="w-full text-xs bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-bold shadow-md transition-all active:scale-95"
                       >
                         Refazer questionário de match

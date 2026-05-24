@@ -126,9 +126,62 @@ export default function VisualizarPerfilPaciente() {
     };
     fetchPerfil();
   }, [user, token]);
+  
+  const validarCampos = (): boolean => {
+    if (!dados) return false;
+    const { city, state, number, name } = dados.user;
+    const { emergencyContactName, emergencyContactPhone } = dados;
+
+    // RegEx padrões
+    const regexAlfabeticoComAcentos = /^[A-Za-zÀ-ÿçÇ\s\-]+$/;
+    const regexEstado = /^[A-Za-zÀ-ÿ\s]{2,}$/;
+    const regexNumeroEndereco = /^[0-9]+[A-Za-z]?$|^[sS]\/[nN]$|^[sS]em\s[nN]úmero$/;
+
+    // 1. Validação do Nome do Paciente
+    if (!name || !regexAlfabeticoComAcentos.test(name.trim())) {
+      toast.error("O campo Nome Completo deve conter apenas caracteres alfabéticos.");
+      return false;
+    }
+
+    // 2. Validação da Cidade
+    if (!city || !regexAlfabeticoComAcentos.test(city.trim())) {
+      toast.error("O campo Cidade deve conter apenas caracteres alfabéticos.");
+      return false;
+    }
+
+    // 3. Validação do Estado
+    const stateTrimmed = state ? state.trim() : "";
+    if (!regexEstado.test(stateTrimmed)) {
+      toast.error("O campo Estado é inválido. Use apenas caracteres alfabéticos (Ex: PE ou Pernambuco).");
+      return false;
+    }
+
+    // 4. Validação do Número do Endereço
+    const numberTrimmed = number ? number.trim() : "";
+    if (!regexNumeroEndereco.test(numberTrimmed)) {
+      toast.error("O campo Número deve ser um valor numérico válido (ex: 123, 123B) ou 'S/N'.");
+      return false;
+    }
+
+    // 5. Validação do Nome do Contato de Emergência
+    if (!emergencyContactName || !regexAlfabeticoComAcentos.test(emergencyContactName.trim())) {
+      toast.error("O Nome do Contato de Emergência deve conter apenas caracteres alfabéticos.");
+      return false;
+    }
+
+    // 6. Validação do Telefone de Emergência (Verifica se contém dígitos mínimos)
+    const phoneLimpo = emergencyContactPhone.replace(/\D/g, "");
+    if (phoneLimpo.length < 10 || phoneLimpo.length > 11) {
+      toast.error("O Telefone do Contato de Emergência deve ser um número válido com DDD.");
+      return false;
+    }
+
+    return true;
+  };
 
   const handleSalvar = async () => {
     if (!dados) return;
+    if (!validarCampos()) return;
     setSaving(true);
     const activeToken = token || localStorage.getItem('token');
 
@@ -270,7 +323,11 @@ export default function VisualizarPerfilPaciente() {
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest w-full">
                         Não gostou das recomendações?
                       </span>
-                      <button className="w-full text-xs bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-bold shadow-md transition-all active:scale-95">
+                      <button 
+                        type="button"
+                        onClick={() => navigate('/match')}
+                        className="w-full text-xs bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-bold shadow-md transition-all active:scale-95"
+                      >
                         Refazer questionário de match
                       </button>
                     </div>
