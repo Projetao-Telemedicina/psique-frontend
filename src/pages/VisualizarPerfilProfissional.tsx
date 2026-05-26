@@ -434,7 +434,7 @@ export default function VisualizarPerfilProfissional() {
               </div>
             </article>
 
-            <aside className={`w-[400px] flex flex-col gap-6 transition-opacity ${isEditing ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+            <aside className={`w-[400px] flex flex-col gap-6 sticky top-0 transition-opacity ${isEditing ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
               <SideCard title="Plano de Impulsionamento" icon={<Star className="text-emerald-500" />}>
                 <div className="bg-gradient-to-br from-teal-500 to-emerald-400 rounded-3xl p-6 text-white mb-4 text-left shadow-lg">
                   <p className="text-xl font-bold mb-1">Impulso Profissional</p>
