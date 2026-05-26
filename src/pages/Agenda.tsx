@@ -7,7 +7,7 @@ import CancelAppointmentModal from '../components/CancelAppointmentModal';
 import AppointmentRescheduleModal from '../components/AppointmentRescheduleModal';
 import CalendarView from '../components/CalendarView';
 import { useAuth } from '../components/AuthContext';
-
+import { useNavigate } from 'react-router-dom';
 import AppointmentHistoryCard from '../components/AppointmentHistoryCard';
 import AppointmentSidebarDetails from '../components/AppointmentSidebarDetails';
 
@@ -31,7 +31,7 @@ export interface Appointment {
 
 export default function Agenda() {
   const { user } = useAuth();
-
+  const navigate = useNavigate();
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
   
@@ -195,7 +195,7 @@ export default function Agenda() {
             <p className="text-slate-500 text-sm">Sincronizada com o seu Google Agenda</p>
           </div>
           {!isProfissional && (
-            <EmergencyButton onClick={() => console.log('Botão de pânico disparado')} />
+            <EmergencyButton onClick={() => navigate('/emergencia')} />
           )}
         </header>
 
