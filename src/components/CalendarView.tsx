@@ -29,10 +29,7 @@ export default function CalendarView({ appointments, onSelectAppointment }: Cale
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
 
-  // Quantidade exata de dias do mês atual
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  
-  // Descobre em qual dia da semana o mês começa (0 = Domingo, 1 = Segunda...)
   const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay();
 
   const handlePreviousMonth = () => {
@@ -61,7 +58,6 @@ export default function CalendarView({ appointments, onSelectAppointment }: Cale
   return (
     <div className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm flex flex-col shrink-0">
       
-      {/* Cabeçalho do Calendário com os Controles de Mês */}
       <div className="flex items-center gap-4 mb-6">
         <span className="text-lg font-bold text-slate-800 capitalize">{formattedMonthYear}</span>
         <div className="flex items-center gap-1 bg-slate-50 p-1.5 rounded-xl border border-slate-100">
@@ -83,25 +79,19 @@ export default function CalendarView({ appointments, onSelectAppointment }: Cale
         </div>
       </div>
 
-      {/* Dias da Semana */}
       <div className="grid grid-cols-7 text-center gap-2 border-b border-slate-100 pb-3 mb-2">
         {['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'].map(d => (
           <span key={d} className="text-xs font-bold text-slate-400 uppercase tracking-wide">{d}</span>
         ))}
       </div>
 
-      {/* Grid de Dias */}
       <div className="grid grid-cols-7 gap-2">
-        {/* Renderização Dinâmica do Offset (espaços vazios do começo do mês) */}
         {Array.from({ length: firstDayOfWeek }).map((_, i) => (
           <div key={`empty-${i}`} className="bg-slate-50/40 rounded-2xl min-h-[85px]"></div>
         ))}
         
-        {/* Renderização Dinâmica dos Dias do Mês */}
         {Array.from({ length: daysInMonth }).map((_, index) => {
           const diaAtual = index + 1;
-          
-          // Filtra todas as consultas deste dia específico usando fuso horário local
           const consultasDoDia = appointments.filter(app => {
             const dataAgendada = new Date(app.startsAt);
             return (
@@ -122,22 +112,28 @@ export default function CalendarView({ appointments, onSelectAppointment }: Cale
                 {diaAtual}
               </span>
 
-              {/* Lista interna com scroll suave para suportar múltiplas consultas no mesmo dia */}
               {consultasDoDia.length > 0 && (
                 <div className="flex flex-col gap-1 overflow-y-auto max-h-[55px] w-full pr-0.5 custom-scrollbar">
-                  {consultasDoDia.map(consulta => (
-                    <button
-                      key={consulta.id}
-                      type="button"
-                      onClick={() => onSelectAppointment(consulta)}
-                      className="w-full bg-[#52B788] hover:bg-[#409A70] text-white text-[10px] font-bold py-1 px-2 rounded-lg text-left flex flex-col justify-between truncate transition-all cursor-pointer shrink-0"
-                    >
-                      <span className="truncate block w-full">{getParticipantName(consulta)}</span>
-                      <span className="text-[9px] opacity-90 mt-0.5 block">
-                        {new Date(consulta.startsAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}h
-                      </span>
-                    </button>
-                  ))}
+                  {consultasDoDia.map((consulta) => {
+                    const actualId = consulta.id || (consulta as any).appointment_id;
+
+                    return (
+                      <button
+                        key={actualId}
+                        type="button"
+                        onClick={() => onSelectAppointment(consulta)}
+                        className="w-full bg-[#52B788] hover:bg-[#409A70] text-white text-[10px] font-bold py-1 px-2 rounded-lg text-left flex flex-col justify-between truncate transition-all cursor-pointer shrink-0"
+                      >
+                        <span className="truncate block w-full">{getParticipantName(consulta)}</span>
+                        <span className="text-[9px] opacity-90 mt-0.5 block">
+                          {new Date(consulta.startsAt).toLocaleTimeString('pt-BR', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}h
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
