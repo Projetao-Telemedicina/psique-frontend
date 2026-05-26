@@ -73,7 +73,7 @@ function App() {
           <Route path='/perfil/profissional/:id' element={<VisualizarPerfilProfissional />} />
           
           {/*UC08 Diario*/}
-          <Route path='/Diario' element={<Diario />} />
+          <Route path='/diario' element={<Diario />} />
 
 
           <Route path='/match' element={<QuestionarioMatch />} />
