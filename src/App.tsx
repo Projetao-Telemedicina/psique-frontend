@@ -22,7 +22,7 @@ import MarcarComProfissional from './pages/MarcarComProfissional.tsx';
 import QuestionarioMatch from './pages/QuestionarioMatch.tsx';
 import Agenda from './pages/Agenda.tsx';
 import Diario from './pages/Diario.tsx';
-
+import Pacientes from './pages/Pacientes.tsx';
 
 
 function App() {
@@ -75,7 +75,7 @@ function App() {
           {/*UC08 Diario*/}
           <Route path='/diario' element={<Diario />} />
 
-
+          <Route path='/pacientes' element={<Pacientes />} />
           <Route path='/match' element={<QuestionarioMatch />} />
           <Route path='/agenda' element={<Agenda />} />
         </Route>
