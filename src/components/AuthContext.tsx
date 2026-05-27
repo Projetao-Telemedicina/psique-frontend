@@ -6,13 +6,14 @@ interface User {
     id: string;
     email: string;
     role: 'ADMIN' | 'PROFESSIONAL' | 'PATIENT';
+    gender: number;
 }
 
 interface AuthContextType {
     token: string | null;
     user: User | null;
     isAuthenticated: boolean;
-    login: (token: string) => void;
+    login: (token: string, options?: { skipRedirect: boolean }) => void;
     logout: () => void;
 }
 
@@ -29,6 +30,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 id?: string;
                 email: string;
                 role: 'ADMIN' | 'PROFESSIONAL' | 'PATIENT';
+                gender?: number | string;
             }
 
             const decoded = jwtDecode<JwtPayload>(t);
@@ -36,7 +38,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             return {
                 id: decoded.sub || decoded.id || '', 
                 email: decoded.email,
-                role: decoded.role
+                role: decoded.role,
+                gender: Number(decoded.gender || 0)
             };
         } catch (error) {
             console.error("Erro ao decodificar token:", error);
@@ -47,7 +50,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<User | null>(getUserFromToken(token));
     const navigate = useNavigate();
 
-    const login = (newToken: string) => {
+    const login = (newToken: string, options?: { skipRedirect: boolean }) => {
         const decodedUser = getUserFromToken(newToken);
         
         if (!decodedUser) {
@@ -62,12 +65,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setToken(newToken);
         setUser(decodedUser);
 
-        if (decodedUser.role === 'ADMIN') {
-            navigate('/admin/validacao');
-        } else if (decodedUser.role === 'PATIENT') {
-            navigate('/paciente/home/');
-        } else if (decodedUser.role === 'PROFESSIONAL') {
-            navigate('/perfil/profissional');
+        if(!options?.skipRedirect){
+            if (decodedUser.role === 'ADMIN') {
+                navigate('/admin/validacao');
+            } else if (decodedUser.role === 'PATIENT') {
+                navigate('/paciente/home/');
+            } else if (decodedUser.role === 'PROFESSIONAL') {
+                navigate('/perfil/profissional');
+            }
         }
     };
 

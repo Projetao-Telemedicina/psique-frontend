@@ -78,7 +78,7 @@ const patientQuestions: Question[] = [
   {
     id: 'specialContexts',
     title: 'Você busca um profissional que tenha conhecimento aprofundado ou experiência prática em algum destes contextos?',
-    type: 'checkbox', // Múltipla escolha
+    type: 'checkbox',
     options: [
       { value: 'LGBTQIA', label: 'Diversidade e Identidade de Gênero: Focado em questões LGBTQIA+ e transição de gênero' },
       { value: 'RACIAL', label: 'Relações Étnico-Raciais: Focado em vivências da negritude, povos indígenas e superação de preconceitos' },
@@ -99,17 +99,6 @@ const patientQuestions: Question[] = [
       { value: 'CONSOLIDATED', label: 'Trajetória consolidada: Profissionais com ampla bagagem clínica, que trazem uma perspectiva baseada em muitos anos de atendimento e maturidade' },
       { value: 'NO_PREFERENCE', label: 'Sem preferência: O tempo de formação ou a idade não são fatores decisivos para a minha escolha' },
       { value: 'NOT_SURE', label: 'Não sei / Gostaria de ver perfis variados' }
-    ]
-  },
-  {
-    id: 'sessionTimeUsage',
-    title: 'Como você prefere que o tempo das suas sessões seja aproveitado?',
-    type: 'radio',
-    options: [
-      { value: 'GUIDED', label: 'Prefiro que o profissional guie a sessão, proponha exercícios práticos e traga ferramentas para eu aplicar no dia a dia' },
-      { value: 'FREE', label: 'Prefiro ter total liberdade para falar o que vier à mente, com o profissional intervindo para me ajudar a conectar os pensamentos' },
-      { value: 'MIXED', label: 'Gostaria de momentos de desabafo livre, mas também de momentos onde o profissional traga técnicas e caminhos claros' },
-      { value: 'NO_PREFERENCE', label: 'Sem preferência / Não sei: Gostaria de experimentar os diferentes formatos e ver qual funciona melhor para mim' }
     ]
   },
   {
@@ -156,7 +145,37 @@ export const PatientForm: React.FC<PatientFormProps> = ({ onStepChange, onFinish
     if (currentStep < patientQuestions.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      onFinish(answers);
+      // Mapeamento para o que o back espera
+      const mapReason: Record<string, number> = { 'EMOTIONAL': 0, 'RELATIONSHIPS': 1, 'PROFESSIONAL': 2, 'SELF_KNOWLEDGE': 3, 'CRISIS': 4, 'NOT_SURE': 5 };
+      const mapTime: Record<string, number> = { 'RECENT': 0, 'MONTHS': 1, 'YEARS': 2, 'NOT_SURE': 3 };
+      const mapHistory: Record<string, number> = { 'NEVER': 0, 'GOOD_EXP': 1, 'BAD_EXP': 2 };
+      const mapApproach: Record<string, number> = { 'TCC': 0, 'PSICANALISE': 1, 'HUMANISTA': 2, 'CORPORAL': 3, 'SISTEMICA': 4, 'DONT_KNOW': 5 };
+      const mapStyle: Record<string, number> = { 'ACTIVE': 0, 'REFLEXIVE': 1, 'SUPPORTIVE': 2, 'BALANCED': 3, 'NOT_SURE': 4 };
+      const mapGender: Record<string, number> = { 'FEMALE': 0, 'MALE': 1, 'NON_BINARY': 2, 'NO_PREFERENCE': 3, 'NOT_SURE': 4 };
+      const mapExp: Record<string, number> = { 'TRENDS': 0, 'BALANCED': 1, 'CONSOLIDATED': 2, 'NO_PREFERENCE': 3, 'NOT_SURE': 4 };
+      const mapGoal: Record<string, number> = { 'CLARITY': 0, 'PRACTICALITY': 1, 'BOTH': 2, 'NOT_SURE': 3 };
+
+      const payload = {
+        motivoTerapia: mapReason[answers.reason],
+        tempoBusca: mapTime[answers.timeNeeded],
+        experienciaPrevia: mapHistory[answers.history],
+        abordagem: mapApproach[answers.approaches],
+        estiloTerapeutico: mapStyle[answers.interactionStyle],
+        genero: mapGender[answers.genderPreference],
+        experiencia: mapExp[answers.professionalTrajectory],
+        objetivo: mapGoal[answers.mainGoal],
+        contextos: [
+          answers.specialContexts?.includes('LGBTQIA') ? 1 : 0,
+          answers.specialContexts?.includes('RACIAL') ? 1 : 0,
+          answers.specialContexts?.includes('NEURODIVERSITY') ? 1 : 0,
+          answers.specialContexts?.includes('FEMINISM') ? 1 : 0,
+          answers.specialContexts?.includes('SPIRITUALITY') ? 1 : 0,
+        ],
+        ignoraContextos: false,
+        precisaSuporteFora: false,
+        restricaoHorario: false,
+      };
+      onFinish(payload);
     }
   };
 
@@ -167,84 +186,27 @@ export const PatientForm: React.FC<PatientFormProps> = ({ onStepChange, onFinish
 
   return (
     <div className="flex-1 flex flex-col p-8 md:p-16 justify-between bg-slate-50 overflow-y-auto h-screen">
-      
-      {/* Container de Questão Centralizado */}
       <div className="max-w-3xl w-full mx-auto my-auto py-8">
-        <span className="text-xs font-bold text-[#2E93D1] tracking-wide uppercase block mb-2">
-          Questão {currentStep + 1}
-        </span>
-        <h2 className="text-xl md:text-2xl font-bold text-slate-800 leading-snug mb-3">
-          {question.title}
-        </h2>
-        {question.type === 'checkbox' && (
-          <p className="text-xs text-slate-400 font-semibold mb-6 italic">*Você pode selecionar mais de uma opção</p>
-        )}
-        <div className={question.type === 'radio' ? 'mt-4 grid grid-cols-1 gap-3' : 'grid grid-cols-1 gap-3'}>
+        <span className="text-xs font-bold text-[#2E93D1] tracking-wide uppercase block mb-2">Questão {currentStep + 1}</span>
+        <h2 className="text-xl md:text-2xl font-bold text-slate-800 leading-snug mb-3">{question.title}</h2>
+        {question.type === 'checkbox' && <p className="text-xs text-slate-400 font-semibold mb-6 italic">*Você pode selecionar mais de uma opção</p>}
+        <div className="mt-4 grid grid-cols-1 gap-3">
           {question.options.map((opt) => {
-            const isSelected = question.type === 'radio' 
-              ? answers[question.id] === opt.value 
-              : (answers[question.id] || []).includes(opt.value);
-              
+            const isSelected = question.type === 'radio' ? answers[question.id] === opt.value : (answers[question.id] || []).includes(opt.value);
             return (
-              <button
-                key={opt.value}
-                onClick={() => handleSelect(opt.value)}
-                className={`w-full text-left p-5 rounded-2xl border-2 flex items-center justify-between transition-all group ${
-                  isSelected 
-                    ? 'border-[#2E93D1] bg-sky-50/50 text-slate-900 shadow-sm' 
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
-                }`}
-              >
-                <span className={`text-sm md:text-base pr-4 leading-relaxed ${isSelected ? 'font-semibold text-slate-900' : ''}`}>
-                  {opt.label}
-                </span>
-                
-                {/* Renderização Condicional da UI baseada no tipo da pergunta */}
-                {question.type === 'radio' ? (
-                  /* Estilo Círculo (Radio) */
-                  <div className={`w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center transition-all ${
-                    isSelected ? 'border-[#2E93D1] bg-[#2E93D1]' : 'border-slate-300 group-hover:border-slate-400'
-                  }`}>
-                    {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
-                  </div>
-                ) : (
-                  /* Estilo Quadrado (Checkbox) */
-                  <div className={`w-5 h-5 rounded-lg border-2 shrink-0 flex items-center justify-center transition-all ${
-                    isSelected ? 'border-[#2E93D1] bg-[#2E93D1]' : 'border-slate-300 group-hover:border-slate-400'
-                  }`}>
-                    {isSelected && (
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    )}
-                  </div>
-                )}
+              <button key={opt.value} onClick={() => handleSelect(opt.value)} className={`w-full text-left p-5 rounded-2xl border-2 flex items-center justify-between transition-all group ${isSelected ? 'border-[#2E93D1] bg-sky-50/50' : 'border-slate-200 bg-white'}`}>
+                <span className={`text-sm md:text-base ${isSelected ? 'font-semibold text-slate-900' : 'text-slate-600'}`}>{opt.label}</span>
+                <div className={`w-5 h-5 rounded-${question.type === 'radio' ? 'full' : 'lg'} border-2 flex items-center justify-center ${isSelected ? 'border-[#2E93D1] bg-[#2E93D1]' : 'border-slate-300'}`}>
+                  {isSelected && (question.type === 'radio' ? <div className="w-1.5 h-1.5 bg-white rounded-full" /> : <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>)}
+                </div>
               </button>
             );
           })}
         </div>
       </div>
-
-      {/* Rodapé de Navegação */}
       <div className="max-w-3xl w-full mx-auto border-t border-slate-200/60 pt-6 flex justify-between items-center">
-        <button
-          onClick={() => setCurrentStep(currentStep - 1)}
-          className={`px-8 py-3.5 rounded-2xl font-bold text-sm border-2 border-slate-200 text-slate-500 hover:bg-slate-100 transition-all ${
-            currentStep === 0 ? 'opacity-0 pointer-events-none' : ''
-          }`}
-        >
-          Voltar
-        </button>
-        
-        <button
-          onClick={handleNext}
-          disabled={!isAnswered()}
-          className={`px-14 py-4 rounded-2xl font-bold text-sm text-white shadow-lg transition-all ${
-            isAnswered() 
-              ? 'bg-[#2E93D1] hover:bg-[#206E9F] transform hover:-translate-y-0.5' 
-              : 'bg-slate-300 text-slate-400 cursor-not-allowed shadow-none'
-          }`}
-        >
+        <button onClick={() => setCurrentStep(currentStep - 1)} className={`px-8 py-3.5 rounded-2xl font-bold text-sm border-2 border-slate-200 text-slate-500 hover:bg-slate-100 ${currentStep === 0 ? 'opacity-0 pointer-events-none' : ''}`}>Voltar</button>
+        <button onClick={handleNext} disabled={!isAnswered()} className={`px-14 py-4 rounded-2xl font-bold text-sm text-white shadow-lg ${isAnswered() ? 'bg-[#2E93D1] hover:bg-[#206E9F]' : 'bg-slate-300 cursor-not-allowed'}`}>
           {currentStep === patientQuestions.length - 1 ? 'Concluir' : 'Avançar'}
         </button>
       </div>

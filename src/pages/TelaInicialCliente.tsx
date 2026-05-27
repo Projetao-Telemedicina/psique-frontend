@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import EmergencyButton from '../components/EmergencyButton';
 import { useAuth } from '../components/AuthContext';
+import {MatchModal} from "../components/MatchModal";
 
 interface UserFormat {
     id: string;
@@ -50,6 +51,7 @@ interface AppointmentData {
 }
 
 export default function TelaInicialPaciente() {
+    const [showMatchModal, setShowMatchModal] = useState(false);
     const navigate = useNavigate();
     const { user, token } = useAuth();
 
@@ -70,6 +72,16 @@ export default function TelaInicialPaciente() {
             try {
                 setLoading(true);
                 const headers = { 'Authorization': `Bearer ${activeToken}` };
+
+                //VERIFICA SE O PACIENTE RESPONDEU O QUESTIONÁRIO DE MATCH
+                //Se não respondeu, exibe o modal do match 
+                const resMatch = await fetch("/api/matching/recommendations", { headers });
+                if (resMatch.status === 500) {
+                    const errorData = await resMatch.json();
+                    if (errorData.message === "Questionario do paciente nao encontrado. Preencha o questionario antes de buscar recomendacoes.") {
+                    setShowMatchModal(true); 
+                    }
+                }
 
                 if (userId) {
                     const resUser = await fetch(`/api/users/${userId}`, { headers });
@@ -140,6 +152,14 @@ export default function TelaInicialPaciente() {
     return (
         <main className="flex h-screen w-full overflow-hidden bg-white font-sans antialiased text-slate-800">
             <Sidebar role={TIPO_USUARIO} itemAtivo="home" />
+            
+            {/* Modal do match */}
+            <MatchModal 
+                isOpen={showMatchModal} 
+                onClose={() => setShowMatchModal(false)} 
+                onStart={() => navigate('/match')} 
+                role="PATIENT"
+            />
 
             <section className="flex flex-col flex-1 overflow-hidden px-12 py-8 pb-0">
                 <header className="flex items-center justify-between mb-8 shrink-0">
