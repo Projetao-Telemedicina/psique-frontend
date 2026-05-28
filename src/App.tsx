@@ -23,7 +23,7 @@ import QuestionarioMatch from './pages/QuestionarioMatch.tsx';
 import Agenda from './pages/Agenda.tsx';
 import Diario from './pages/Diario.tsx';
 import Pacientes from './pages/Pacientes.tsx';
-
+import Estatisticas from './pages/Estatisticas.tsx';
 
 function App() {
   return (
@@ -74,7 +74,8 @@ function App() {
           
           {/*UC08 Diario*/}
           <Route path='/diario' element={<Diario />} />
-
+          
+          <Route path='/estatisticas' element={<Estatisticas />} />
           <Route path='/pacientes' element={<Pacientes />} />
           <Route path='/match' element={<QuestionarioMatch />} />
           <Route path='/agenda' element={<Agenda />} />
