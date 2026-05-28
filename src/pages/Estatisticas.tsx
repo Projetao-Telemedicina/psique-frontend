@@ -84,7 +84,6 @@ export default function Estatisticas() {
           {user?.role !== 'PROFESSIONAL' && <EmergencyButton onClick={() => navigate('/emergencia')} />}
         </div>
         
-        {/* Layout responsivo: empilha em telas pequenas, lado a lado em telas grandes */}
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="grid grid-cols-2 gap-4 md:gap-6 h-fit w-full lg:w-fit">
             <StatCard value={stats.sessions} label="Sessões concluídas" icon={<CheckCircle size={40} />} />
@@ -135,9 +134,14 @@ export default function Estatisticas() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-4 text-slate-700">
+              <div className="space-y-4 text-slate-700 flex-1 flex flex-col overflow-hidden">
                 <p><strong className="text-black">Nota:</strong> {selectedItem.rating} estrelas</p>
-                <p><strong className="text-black">Comentário:</strong> {selectedItem.comment}</p>
+                <div className="bg-slate-50 p-4 rounded-xl flex-1 flex flex-col overflow-hidden">
+                  <p className="text-sm font-bold text-black mb-2">Comentário:</p>
+                  <div className="flex-1 overflow-y-auto pr-2">
+                    <p className="text-sm text-slate-600 whitespace-pre-wrap break-words">{selectedItem.comment || "Sem comentários."}</p>
+                  </div>
+                </div>
               </div>
             )}
           </div>

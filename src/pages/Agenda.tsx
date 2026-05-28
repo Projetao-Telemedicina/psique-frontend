@@ -10,6 +10,7 @@ import { useAuth } from '../components/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import AppointmentHistoryCard from '../components/AppointmentHistoryCard';
 import AppointmentSidebarDetails from '../components/AppointmentSidebarDetails';
+import ReviewModal from '../components/ReviewModal';
 
 export interface Appointment {
   id: string;
@@ -34,7 +35,8 @@ export default function Agenda() {
   const navigate = useNavigate();
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
-  
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [historyAppointments, setHistoryAppointments] = useState<Appointment[]>([]);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
@@ -102,37 +104,37 @@ export default function Agenda() {
   };
 
   const handleDownloadCertificate = async (id: string) => {
-  try {
-    const token = localStorage.getItem('token');
-    if (!token) return;
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
 
-    const response = await fetch(`/api/appointments/${id}/certificate`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/pdf'
+      const response = await fetch(`/api/appointments/${id}/certificate`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/pdf'
+        }
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) toast.error("Sessão expirada. Faça login novamente.");
+        throw new Error("Erro ao baixar o documento");
       }
-    });
 
-    if (!response.ok) {
-      if (response.status === 401) toast.error("Sessão expirada. Faça login novamente.");
-      throw new Error("Erro ao baixar o documento");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `comprovante-${id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch { 
+      toast.error("Não foi possível gerar ou baixar o comprovante.");
     }
-
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `comprovante-${id}.pdf`);
-    document.body.appendChild(link);
-    link.click();
-    
-    link.parentNode?.removeChild(link);
-    window.URL.revokeObjectURL(url);
-  } catch { 
-    toast.error("Não foi possível gerar ou baixar o comprovante.");
-  }
-};
+  };
 
   const handleMarkAsCompleted = async (id: string) => {
     try {
@@ -200,15 +202,12 @@ export default function Agenda() {
         </header>
 
         <div className="flex flex-1 overflow-hidden">
-          
           <div className="flex-1 overflow-y-auto p-8 flex flex-col gap-6">
-            
             <CalendarView 
               appointments={appointments} 
               onSelectAppointment={setSelectedAppointment} 
             />
 
-            {/* Bloco do Histórico */}
             <div className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm flex flex-col text-left">
               <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-3">
                 <div>
@@ -230,6 +229,10 @@ export default function Agenda() {
                       getParticipantName={getParticipantName}
                       handleDownloadCertificate={handleDownloadCertificate}
                       handleMarkAsNoShow={handleMarkAsNoShow}
+                      onOpenReview={() => {
+                        setReviewingId(histApp.id);
+                        setIsReviewOpen(true);
+                      }}
                     />
                   ))}
                 </div>
@@ -240,7 +243,6 @@ export default function Agenda() {
                 </div>
               )}
             </div>
-
           </div>
 
           {selectedAppointment && (
@@ -256,7 +258,6 @@ export default function Agenda() {
               setIsCancelOpen={setIsCancelOpen}
             />
           )}
-
         </div>
       </section>
 
@@ -283,6 +284,20 @@ export default function Agenda() {
             }}
           />
         </>
+      )}
+
+      {reviewingId && (
+        <ReviewModal 
+          isOpen={isReviewOpen} 
+          onClose={() => {
+            setIsReviewOpen(false);
+            setReviewingId(null);
+          }} 
+          appointmentId={reviewingId}
+          onSuccess={() => {
+            fetchAppointmentsHistory(); 
+          }}
+        />
       )}
     </main>
   );

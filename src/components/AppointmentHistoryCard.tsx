@@ -1,5 +1,5 @@
 import { Calendar as CalendarIcon, Clock, FileText, XCircle, CheckCircle, AlertCircle } from 'lucide-react';
-import type {Appointment} from '../pages/Agenda'
+import type { Appointment } from '../pages/Agenda';
 
 interface HistoryCardProps {
   histApp: Appointment;
@@ -7,14 +7,17 @@ interface HistoryCardProps {
   getParticipantName: (app: Appointment) => string;
   handleDownloadCertificate: (id: string) => void;
   handleMarkAsNoShow: (id: string) => Promise<void>;
+  onOpenReview: () => void;
 }
 
 export default function AppointmentHistoryCard({
   histApp,
+  isProfissional,
   getParticipantName,
   handleDownloadCertificate,
+  onOpenReview,
 }: HistoryCardProps) {
-  
+
   const getStatusBadge = (status: Appointment['status']) => {
     switch (status) {
       case 'COMPLETED':
@@ -58,12 +61,22 @@ export default function AppointmentHistoryCard({
         </div>
 
         {histApp.status === 'COMPLETED' && (
-          <button 
-            onClick={() => handleDownloadCertificate(histApp.id)}
-            className="flex items-center gap-1 text-blue-600 hover:text-blue-700 font-bold transition-all bg-white shadow-xs border border-slate-100 px-2 py-1 rounded-lg text-[11px] cursor-pointer shrink-0"
-          >
-            <FileText size={12} /> Comprovante
-          </button>
+          <div className="flex gap-2">
+            {!isProfissional && (
+              <button 
+                onClick={onOpenReview}
+                className="flex items-center gap-1 text-amber-600 hover:text-amber-700 font-bold transition-all bg-white shadow-xs border border-slate-100 px-2 py-1 rounded-lg text-[11px] cursor-pointer shrink-0"
+              >
+                Avaliar
+              </button>
+            )}
+            <button 
+              onClick={() => handleDownloadCertificate(histApp.id)}
+              className="flex items-center gap-1 text-blue-600 hover:text-blue-700 font-bold transition-all bg-white shadow-xs border border-slate-100 px-2 py-1 rounded-lg text-[11px] cursor-pointer shrink-0"
+            >
+              <FileText size={12} /> Comprovante
+            </button>
+          </div>
         )}
       </div>
     </div>
