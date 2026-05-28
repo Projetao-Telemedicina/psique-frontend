@@ -24,6 +24,7 @@ import Agenda from './pages/Agenda.tsx';
 import Diario from './pages/Diario.tsx';
 import Pacientes from './pages/Pacientes.tsx';
 import Estatisticas from './pages/Estatisticas.tsx';
+import TelaInicialProfissional from './pages/TelaInicialProfissional.tsx';
 
 function App() {
   return (
@@ -71,6 +72,7 @@ function App() {
           {/* UC07 - Visualizar cadastro de profissional */}
           <Route path='/perfil/profissional' element={<VisualizarPerfilProfissional />} />
           <Route path='/perfil/profissional/:id' element={<VisualizarPerfilProfissional />} />
+          <Route path='/profissional/home' element={<TelaInicialProfissional />} />
           
           {/*UC08 Diario*/}
           <Route path='/diario' element={<Diario />} />
