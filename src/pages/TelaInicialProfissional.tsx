@@ -55,7 +55,6 @@ export default function TelaInicialProfissional() {
   const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([]);
   const [activePatientsCount, setActivePatientsCount] = useState(0);
   const [weeklySessionsCount, setWeeklySessionsCount] = useState(0);
-  const [atendimentoOn, setAtendimentoOn] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -153,7 +152,7 @@ export default function TelaInicialProfissional() {
 
   return (
     <main className="flex h-screen w-full bg-[#F8FAFC] overflow-hidden text-left font-sans antialiased">
-      <Sidebar role="profissional" itemAtivo="home" atendimentoOn={atendimentoOn} setAtendimentoOn={setAtendimentoOn} />
+      <Sidebar role="profissional" itemAtivo="home"  />
 
       <section className="flex flex-col flex-1 p-6 md:p-8 overflow-y-auto gap-8">
         
