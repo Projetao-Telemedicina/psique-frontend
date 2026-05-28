@@ -1,8 +1,13 @@
 import { useState } from 'react';
 import HeroSection from '../components/HeroSection.js';
 import { ChevronLeft, EyeOff, Eye, CloudUpload, FileCheck } from 'lucide-react';
+import {MatchModal} from "../components/MatchModal";
+import {toast} from "react-hot-toast";
+import {useAuth} from "../components/AuthContext";
 
 function CadastroProfissional() {
+    const { login, logout } = useAuth();
+    const [showMatchModal, setShowMatchModal] = useState(false);
     const [etapa, setEtapa] = useState(1);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -103,13 +108,13 @@ function CadastroProfissional() {
             });
 
             if (!valRes.ok) throw new Error("Documento não enviado. Tente via painel.");
-
-            alert("Cadastro concluído com sucesso!");
-            window.location.href = '/login';
+            login(accessToken, { skipRedirect: true }); 
+            toast.success("Cadastro concluído com sucesso!");
+            setShowMatchModal(true); //adição do modal de match após cadastro profissional
 
         } catch (error: unknown) { // Mudado de 'any' para 'unknown' para agradar o ESLint
             const message = error instanceof Error ? error.message : "Erro desconhecido";
-            alert(message);
+            toast.error(message);
         } finally {
             setLoading(false);
         }
@@ -127,6 +132,17 @@ function CadastroProfissional() {
     return (
         <main className="login-page flex h-screen w-full overflow-hidden bg-snow">
             <HeroSection subtitle="Profissional" currentStep={etapa} totalSteps={3} />
+            
+            {/* Modal do match */}
+            <MatchModal 
+                isOpen={showMatchModal} 
+                onClose={() => {
+                    logout();
+                    window.location.replace('/login');
+                }} 
+                onStart={() => {window.location.replace('/match');}}
+                role="PROFESSIONAL"
+            />
 
             <section className="form-section flex flex-col w-full lg:w-[73%] items-center justify-center p-6 md:p-12 relative overflow-y-auto">
                 <button

@@ -73,12 +73,12 @@ const Sidebar: React.FC<SidebarProps> = ({ role, itemAtivo }) => {
     }
 
     return [
-      { id: 'home', label: 'Home', icon: <Icons.Home />, path: '/' },
+      { id: 'home', label: 'Home', icon: <Icons.Home />, path: `/${role}/home` },
       ...(role === 'paciente' ? [{ id: 'diario', label: 'Diário', icon: <Icons.Diario />, path: '/diario' }] : []),
+      ...(role === 'profissional' ? [{ id: 'pacientes', label: 'Pacientes', icon: <Icons.Usuarios />, path: '/pacientes' }] : []),
       { id: 'agenda', label: 'Agenda', icon: <Icons.Agenda />, path: '/agenda' },
       { id: 'estatisticas', label: 'Estatísticas', icon: <Icons.Estatisticas />, path: '/estatisticas' },
       { id: 'chat', label: 'Chat', icon: <Icons.Chat />, path: '/chat' },
-      { id: 'ligacao', label: 'Ligação', icon: <Icons.Ligacao />, path: '/ligacao' },
       { id: 'perfil', label: 'Perfil', icon: <Icons.Perfil />, path: `/perfil/${role}` },
     ];
   };

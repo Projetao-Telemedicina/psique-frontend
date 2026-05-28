@@ -1,26 +1,37 @@
 import { Route, Routes, Navigate } from 'react-router-dom'
-import { Toaster } from 'react-hot-toast' 
-import './App.css'
+import { Toaster } from 'react-hot-toast'
+import { AuthProvider } from './components/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+
 import Login from './pages/Login.tsx';
 import RecuperarSenha from './pages/RecuperarSenha.tsx'
 import Cadastro from './pages/Cadastro.tsx'
-import CadastroCliente from './pages/CadastroCliente.tsx';
 import CadastroProfissional from './pages/CadastroProfissional.tsx';
-import VisualizarPerfilPaciente from './pages/VisualizarPerfilPaciente'
+import CadastroCliente from './pages/CadastroCliente.tsx';
+
 import VisualizarPerfilProfissional from './pages/VisualizarPerfilProfissional'
+
+import TelaInicialPaciente from './pages/TelaInicialCliente.tsx';
+import CompatibilidadeComProfissionais from './pages/CompatibilidadeComProfissionais.tsx';
+import ProfissionaisEmDestaque from './pages/ProfissionaisEmDestaque.tsx';
+import VisualizarPerfilPaciente from './pages/VisualizarPerfilPaciente'
+
 import ValidacaoCadastro from './pages/ValidacaoCadastro.tsx'
+import './App.css'
+import MarcarComProfissional from './pages/MarcarComProfissional.tsx';
 import QuestionarioMatch from './pages/QuestionarioMatch.tsx';
-import { AuthProvider } from './components/AuthContext';
-import ProtectedRoute from './components/ProtectedRoute';
 import Agenda from './pages/Agenda.tsx';
+import Diario from './pages/Diario.tsx';
+import Pacientes from './pages/Pacientes.tsx';
+import Estatisticas from './pages/Estatisticas.tsx';
 
 function App() {
   return (
     <AuthProvider>
       {/* Toast */}
-      <Toaster 
-        position="top-right" 
-        reverseOrder={false} 
+      <Toaster
+        position="top-right"
+        reverseOrder={false}
         toastOptions={{
           duration: 4000,
           style: {
@@ -50,6 +61,10 @@ function App() {
           <Route path='/admin/validacao' element={<ValidacaoCadastro />} />
 
           {/* UC06 - Visualizar cadastro de paciente */}
+          <Route path='/paciente/home/' element={<TelaInicialPaciente />} />
+          <Route path="/paciente/perfil_do_profissional/:id" element={<MarcarComProfissional />} />
+          <Route path='/paciente/compatibilidade/' element={<CompatibilidadeComProfissionais />} />
+          <Route path='/paciente/destaque/' element={<ProfissionaisEmDestaque />} />
           <Route path='/perfil/paciente' element={<VisualizarPerfilPaciente />} />
           <Route path='/perfil/paciente/:id' element={<VisualizarPerfilPaciente />} />
 
@@ -57,6 +72,11 @@ function App() {
           <Route path='/perfil/profissional' element={<VisualizarPerfilProfissional />} />
           <Route path='/perfil/profissional/:id' element={<VisualizarPerfilProfissional />} />
           
+          {/*UC08 Diario*/}
+          <Route path='/diario' element={<Diario />} />
+          
+          <Route path='/estatisticas' element={<Estatisticas />} />
+          <Route path='/pacientes' element={<Pacientes />} />
           <Route path='/match' element={<QuestionarioMatch />} />
           <Route path='/agenda' element={<Agenda />} />
         </Route>
