@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             } else if (decodedUser.role === 'PATIENT') {
                 navigate('/paciente/home/');
             } else if (decodedUser.role === 'PROFESSIONAL') {
-                navigate('/perfil/profissional');
+                navigate('/profissional/home');
             }
         }
     };
