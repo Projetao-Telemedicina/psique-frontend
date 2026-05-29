@@ -169,7 +169,7 @@ export default function MarcarComProfissional() {
                 priceCents: 15000
             };
 
-            const res = await fetch('http://localhost:3000/appointments', {
+            const res = await fetch('/api/appointments', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
