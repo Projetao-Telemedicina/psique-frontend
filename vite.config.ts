@@ -8,7 +8,7 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://localhost:3000',
-        //target: 'https://psique-backend.onrender.com',
+        //target: 'https://psique-backend-x82n.onrender.com',
         changeOrigin: true,
         //secure: true,
         secure: false,
