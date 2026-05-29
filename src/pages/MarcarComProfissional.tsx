@@ -82,7 +82,7 @@ export default function MarcarComProfissional() {
                 const consultasDesteProfissional = dataAppts.filter(app => app.professionalId === id);
 
                 const profFormatado: ProfessionalData = {
-                    id: dataProf.userId || dataProf.id || id,
+                    id: dataProf.id || id,
                     crp: dataProf.crp || "Registro não informado",
                     specialty: dataProf.specialty || "Psicologia",
                     scoreAvg: dataProf.scoreAvg || "0",
@@ -178,20 +178,20 @@ export default function MarcarComProfissional() {
                 body: JSON.stringify(payloadBody)
             });
 
+            const data = await res.json();
+
             if (res.ok) {
-                alert('Consulta agendada com sucesso!');
+                alert(data.message || 'Consulta agendada com sucesso!');
                 setIsModalOpen(false);
                 navigate('/paciente/home');
-            } else if (res.status === 500) {
-                console.warn('O backend falhou devido às credenciais do Google Calendar.');
-                alert('Aviso de Dev: O servidor NestJS falhou ao gerar o link do Google Meet (Erro 500).');
-            } else if (res.status === 409) {
-                alert('Este horário já foi reservado por outro paciente.');
             } else {
-                alert('Falha ao agendar. Verifique as permissões ou os dados.');
+                console.error('Erro real do backend:', data);
+
+                const errorMessage = Array.isArray(data.message) ? data.message.join(', ') : data.message;
+                alert(errorMessage || `Erro ${res.status}: Falha no servidor.`);
             }
         } catch (error) {
-            console.error("Erro ao conectar:", error);
+            console.error("Erro de conexão/rede:", error);
             alert('Erro de conexão com o servidor.');
         } finally {
             setBookingLoading(false);
@@ -323,9 +323,9 @@ export default function MarcarComProfissional() {
             {isModalOpen && selectedSlot && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
                     <div className="relative w-[500px] bg-[#EAEAEA] rounded-[4px] p-10 pt-12 shadow-2xl text-left font-sans">
-                        
+
                         {/* Botão X para fechar */}
-                        <button 
+                        <button
                             onClick={() => setIsModalOpen(false)}
                             className="absolute top-6 right-6 text-black hover:text-gray-700 text-2xl font-light cursor-pointer transition-colors"
                         >
