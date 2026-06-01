@@ -3,11 +3,11 @@ import { Calendar as CalendarIcon } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Sidebar from '../components/Sidebar';
 import EmergencyButton from '../components/EmergencyButton';
+import { EmergencyModal } from "../components/EmergencyModal";
 import CancelAppointmentModal from '../components/CancelAppointmentModal';
 import AppointmentRescheduleModal from '../components/AppointmentRescheduleModal';
 import CalendarView from '../components/CalendarView';
 import { useAuth } from '../components/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import AppointmentHistoryCard from '../components/AppointmentHistoryCard';
 import AppointmentSidebarDetails from '../components/AppointmentSidebarDetails';
 import ReviewModal from '../components/ReviewModal';
@@ -32,7 +32,7 @@ export interface Appointment {
 
 export default function Agenda() {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
@@ -128,10 +128,10 @@ export default function Agenda() {
       link.setAttribute('download', `comprovante-${id}.pdf`);
       document.body.appendChild(link);
       link.click();
-      
+
       link.parentNode?.removeChild(link);
       window.URL.revokeObjectURL(url);
-    } catch { 
+    } catch {
       toast.error("Não foi possível gerar ou baixar o comprovante.");
     }
   };
@@ -190,6 +190,11 @@ export default function Agenda() {
     <main className="flex h-screen w-full overflow-hidden bg-[#F8FAFC]">
       <Sidebar role={getSidebarRole()} itemAtivo="agenda" />
 
+      <EmergencyModal
+        isOpen={showEmergencyModal}
+        onClose={() => setShowEmergencyModal(false)}
+      />
+
       <section className="flex flex-col flex-1 overflow-hidden text-left">
         <header className="flex items-center justify-between px-8 py-6 bg-white border-b border-slate-100 shrink-0">
           <div>
@@ -197,15 +202,15 @@ export default function Agenda() {
             <p className="text-slate-500 text-sm">Sincronizada com o seu Google Agenda</p>
           </div>
           {!isProfissional && (
-            <EmergencyButton onClick={() => navigate('/emergencia')} />
+            <EmergencyButton onClick={() => setShowEmergencyModal(true)} />
           )}
         </header>
 
         <div className="flex flex-1 overflow-hidden">
           <div className="flex-1 overflow-y-auto p-8 flex flex-col gap-6">
-            <CalendarView 
-              appointments={appointments} 
-              onSelectAppointment={setSelectedAppointment} 
+            <CalendarView
+              appointments={appointments}
+              onSelectAppointment={setSelectedAppointment}
             />
 
             <div className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm flex flex-col text-left">
@@ -222,7 +227,7 @@ export default function Agenda() {
               {historyAppointments.length > 0 ? (
                 <div className="flex flex-wrap gap-4 w-full">
                   {historyAppointments.map((histApp) => (
-                    <AppointmentHistoryCard 
+                    <AppointmentHistoryCard
                       key={histApp.id}
                       histApp={histApp}
                       isProfissional={isProfissional}
@@ -246,7 +251,7 @@ export default function Agenda() {
           </div>
 
           {selectedAppointment && (
-            <AppointmentSidebarDetails 
+            <AppointmentSidebarDetails
               appointment={selectedAppointment}
               isProfissional={isProfissional}
               getParticipantName={getParticipantName}
@@ -263,9 +268,9 @@ export default function Agenda() {
 
       {selectedAppointment && (
         <>
-          <CancelAppointmentModal 
-            isOpen={isCancelOpen} 
-            onClose={() => setIsCancelOpen(false)} 
+          <CancelAppointmentModal
+            isOpen={isCancelOpen}
+            onClose={() => setIsCancelOpen(false)}
             appointment={selectedAppointment}
             onSuccess={() => {
               setSelectedAppointment(null);
@@ -273,9 +278,9 @@ export default function Agenda() {
               fetchAppointmentsHistory();
             }}
           />
-          <AppointmentRescheduleModal 
-            isOpen={isRescheduleOpen} 
-            onClose={() => setIsRescheduleOpen(false)} 
+          <AppointmentRescheduleModal
+            isOpen={isRescheduleOpen}
+            onClose={() => setIsRescheduleOpen(false)}
             appointment={selectedAppointment}
             onSuccess={() => {
               setSelectedAppointment(null);
@@ -287,15 +292,15 @@ export default function Agenda() {
       )}
 
       {reviewingId && (
-        <ReviewModal 
-          isOpen={isReviewOpen} 
+        <ReviewModal
+          isOpen={isReviewOpen}
           onClose={() => {
             setIsReviewOpen(false);
             setReviewingId(null);
-          }} 
+          }}
           appointmentId={reviewingId}
           onSuccess={() => {
-            fetchAppointmentsHistory(); 
+            fetchAppointmentsHistory();
           }}
         />
       )}

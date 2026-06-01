@@ -2,9 +2,9 @@ import { useState } from "react";
 import { Send } from "lucide-react";
 import Sidebar from '../components/Sidebar';
 import EmergencyButton from '../components/EmergencyButton';
+import { EmergencyModal } from "../components/EmergencyModal";
 import { useAuth } from '../components/AuthContext';
 import { toast } from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
 // --- Types ---
 type MoodId = "feliz" | "amedrontado" | "calmo" | "triste" | "ansioso" | "esperancoso" | "raivoso" | "tranquilo" | "cansado";
 type SleepOption = "Dormi 8 horas ou mais" | "Dormi entre 6 a 8 horas" | "Dormi entre 4 a 5 horas" | "Dormi menos que 4 horas";
@@ -60,7 +60,7 @@ function MoodButton({ mood, selectedMood, onSelectMood }: { mood: Mood, selected
 
 export default function Diario() {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const [selectedMood, setSelectedMood] = useState<MoodId>("feliz");
   const [selectedSleep, setSelectedSleep] = useState<SleepOption>("Dormi 8 horas ou mais");
   const [diaryText, setDiaryText] = useState("");
@@ -71,20 +71,20 @@ export default function Diario() {
     const token = localStorage.getItem("token");
     if (!token) return toast.error("Usuário não autenticado.");
     const payload = {
-    feeling: moodToFeeling[selectedMood],
-    sleepQuality: sleepToQuality[selectedSleep],
-    symptom: "Nenhum", 
-    content: diaryText,
+      feeling: moodToFeeling[selectedMood],
+      sleepQuality: sleepToQuality[selectedSleep],
+      symptom: "Nenhum",
+      content: diaryText,
     };
     try {
-    const response = await fetch("/api/diaries", {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json", 
-        "Authorization": `Bearer ${token}` 
-      },
-      body: JSON.stringify(payload),
-    });
+      const response = await fetch("/api/diaries", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload),
+      });
       const data = await response.json();
       if (response.ok) {
         toast.success("Diário salvo com sucesso!");
@@ -102,18 +102,23 @@ export default function Diario() {
     <main className="flex h-screen w-full overflow-hidden bg-[#F8FAFC]">
       <Sidebar role={getSidebarRole()} itemAtivo="diario" />
 
+      <EmergencyModal
+        isOpen={showEmergencyModal}
+        onClose={() => setShowEmergencyModal(false)}
+      />
+
       <section className="flex flex-col flex-1 overflow-hidden text-left">
         <header className="flex items-center justify-between px-8 py-6 bg-white border-b border-slate-100 shrink-0">
           <div>
             <h1 className="text-3xl font-bold text-[#1E293B]">Diário</h1>
             <p className="text-slate-500 text-sm">Registre seu bem-estar diário</p>
           </div>
-          <EmergencyButton onClick={() => navigate('/emergencia')} />
+          <EmergencyButton onClick={() => setShowEmergencyModal(true)} />
         </header>
 
         <div className="flex-1 overflow-y-auto p-8">
           <div className="max-w-4xl mx-auto space-y-10">
-            
+
             {/* Humor */}
             <div>
               <div className="mb-6 flex items-center justify-between">
