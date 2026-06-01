@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/AuthContext';
 
@@ -15,7 +15,6 @@ interface IconProps {
   color?: string;
 }
 
-
 const IconWrapper = ({ children, size = 18, color = 'currentColor' }: { children: React.ReactNode } & IconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     {children}
@@ -23,7 +22,6 @@ const IconWrapper = ({ children, size = 18, color = 'currentColor' }: { children
 );
 
 const Icons = {
-
   Home: (p: IconProps) => <IconWrapper {...p}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></IconWrapper>,
   Diario: (p: IconProps) => <IconWrapper {...p}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></IconWrapper>,
   Agenda: (p: IconProps) => <IconWrapper {...p}><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></IconWrapper>,
@@ -31,8 +29,6 @@ const Icons = {
   Chat: (p: IconProps) => <IconWrapper {...p}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></IconWrapper>,
   Ligacao: (p: IconProps) => <IconWrapper {...p}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.8a16 16 0 0 0 6.29 6.29l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" /></IconWrapper>,
   Perfil: (p: IconProps) => <IconWrapper {...p}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></IconWrapper>,
-
-
   Validacao: (p: IconProps) => <IconWrapper {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></IconWrapper>,
   Usuarios: (p: IconProps) => <IconWrapper {...p}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></IconWrapper>,
   Financeiro: (p: IconProps) => <IconWrapper {...p}><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></IconWrapper>,
@@ -44,20 +40,49 @@ const Icons = {
   )
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ role, itemAtivo }) => {
+const Sidebar: React.FC<SidebarProps> = ({ role, itemAtivo, atendimentoAtivo = false }) => {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+
+  const { logout, token } = useAuth();
+  const [isOnline, setIsOnline] = useState<boolean>(atendimentoAtivo);
+
+  useEffect(() => {
+    setIsOnline(atendimentoAtivo);
+  }, [atendimentoAtivo]);
 
   const handleLogout = () => {
-    // 1. Limpa os dados de autenticação (token, estado global, localStorage)
-    if (logout) {
-      logout();
-    } else {
-      localStorage.removeItem('accessToken');
-    }
+    logout();
+  };
 
-    // 2. Redireciona para o login
-    navigate('/login');
+  const handleToggleOnline = async () => {
+    const nextStatus = !isOnline;
+    setIsOnline(nextStatus);
+
+    try {
+      // Validação de segurança básica antes do disparo da requisição
+      if (!token) {
+        throw new Error('Token de autenticação não encontrado no estado global.');
+      }
+
+      const response = await fetch('/api/professionals/me/online-mode', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          onlineMode: nextStatus ? 'ONLINE' : 'OFFLINE'
+        })
+      });
+
+      if (!response.ok) throw new Error('Erro na API');
+
+      const data = await response.json();
+      setIsOnline(data.onlineStatus === 'ONLINE');
+    } catch (error) {
+      console.error('Falha ao atualizar status:', error);
+      setIsOnline(!nextStatus);
+    }
   };
 
   const getMenuItems = () => {
@@ -89,12 +114,13 @@ const Sidebar: React.FC<SidebarProps> = ({ role, itemAtivo }) => {
     <aside
       style={{
         width: '281px',
-        height: '100%',
+        height: '100vh',
         background: 'linear-gradient(359deg, #3599D8 -50.97%, #5BB38A 99.09%)',
         display: 'flex',
         flexDirection: 'column',
         paddingTop: '20px',
         flexShrink: 0,
+        boxSizing: 'border-box'
       }}
     >
       {/* --- Tag de Administrador --- */}
@@ -114,66 +140,107 @@ const Sidebar: React.FC<SidebarProps> = ({ role, itemAtivo }) => {
       )}
 
       {/* --- Logo Area --- */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', marginBottom: '32px', padding: '0 12px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '16px', padding: '0 12px' }}>
         <img
           src="/psique-logo-white.svg"
           alt="Logo Psique"
-          style={{ width: '220px', height: '180px', objectFit: 'contain' }}
+          style={{ width: '200px', height: '100px', objectFit: 'contain' }}
         />
-
       </div>
 
-      {/* --- Navegação --- */}
-      <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '0 15px' }}>
-        {menuItems.map((item) => {
-          const isAtivo = item.id === itemAtivo;
-          const isPerfilEspecial = item.id === 'perfil' && role !== 'administrador';
 
-          return (
-            <button
-              key={item.id}
-              onClick={() => navigate(item.path)}
-              style={isPerfilEspecial ? {
-                width: '207px',
-                height: '45px',
-                borderRadius: '99px',
-                border: '1px solid #A7A7A7',
-                background: '#ECECEC',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: '0 12px',
-                margin: '10px auto 0 0',
-                color: isAtivo ? '#1E293B' : '#64748B',
-                fontSize: '13px',
-                fontWeight: isAtivo ? '600' : '400',
-                cursor: 'pointer',
-              } : {
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '10px 15px',
-                background: isAtivo ? 'rgba(255,255,255,0.25)' : 'transparent',
-                border: 'none',
-                borderRadius: '10px',
-                color: 'white',
-                fontSize: '14px',
-                fontWeight: isAtivo ? '600' : '400',
-                cursor: 'pointer',
-                textAlign: 'left',
-                transition: 'background 0.2s',
-                opacity: isAtivo ? 1 : 0.85
-              }}
-            >
-              <span style={{ flexShrink: 0 }}>{item.icon}</span>
-              <span style={{ flex: 1 }}>{item.label}</span>
-            </button>
-          );
-        })}
-      </nav>
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
 
-      <div style={{ flex: 1 }} />
+        {/* --- Navegação --- */}
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '0 15px' }}>
+          {menuItems.map((item) => {
+            const isAtivo = item.id === itemAtivo;
+            const isPerfilEspecial = item.id === 'perfil' && role !== 'administrador';
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => navigate(item.path)}
+                style={isPerfilEspecial ? {
+                  width: '207px',
+                  height: '45px',
+                  borderRadius: '99px',
+                  border: '1px solid #A7A7A7',
+                  background: '#ECECEC',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '0 12px',
+                  margin: '10px auto 0 0',
+                  color: isAtivo ? '#1E293B' : '#64748B',
+                  fontSize: '13px',
+                  fontWeight: isAtivo ? '600' : '400',
+                  cursor: 'pointer',
+                } : {
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '10px 15px',
+                  background: isAtivo ? 'rgba(255,255,255,0.25)' : 'transparent',
+                  border: 'none',
+                  borderRadius: '10px',
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: isAtivo ? '600' : '400',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'background 0.2s',
+                  opacity: isAtivo ? 1 : 0.85
+                }}
+              >
+                <span style={{ flexShrink: 0 }}>{item.icon}</span>
+                <span style={{ flex: 1 }}>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* --- Seção de Atendimento --- */}
+        {role === 'profissional' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '20px 30px 10px 30px' }}>
+            <span style={{ color: 'white', fontSize: '14px', fontWeight: '700', fontFamily: 'Poppins, sans-serif' }}>
+              Atendimento
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <button
+                onClick={handleToggleOnline}
+                style={{
+                  width: '68px',
+                  height: '34px',
+                  borderRadius: '99px',
+                  backgroundColor: '#D9D9D9',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '0 4px',
+                  justifyContent: isOnline ? 'flex-start' : 'flex-end',
+                  transition: 'all 0.2s ease-in-out',
+                }}
+              >
+                <div
+                  style={{
+                    width: '26px',
+                    height: '26px',
+                    borderRadius: '50%',
+                    backgroundColor: '#C44D00',
+                    transition: 'all 0.2s ease-in-out',
+                  }}
+                />
+              </button>
+              <span style={{ color: 'white', fontSize: '14px', fontWeight: '500', fontFamily: 'Poppins, sans-serif' }}>
+                {isOnline ? 'on' : 'off'}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* --- Logout --- */}
       <button
@@ -187,10 +254,13 @@ const Sidebar: React.FC<SidebarProps> = ({ role, itemAtivo }) => {
           background: 'none',
           border: 'none',
           cursor: 'pointer',
-          borderTop: '1px solid rgba(255,255,255,0.1)'
+          borderTop: '1px solid rgba(255,255,255,0.1)',
+          flexShrink: 0
         }}
       >
-        <Icons.Sair size={20} />
+        <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+          <Icons.Sair size={20} />
+        </span>
         <span style={{ color: 'white', fontFamily: 'Poppins', fontSize: '14px', fontWeight: '500' }}>
           Sair da conta
         </span>
