@@ -25,12 +25,10 @@ import Diario from './pages/Diario.tsx';
 import Pacientes from './pages/Pacientes.tsx';
 import Estatisticas from './pages/Estatisticas.tsx';
 import TelaInicialProfissional from './pages/TelaInicialProfissional.tsx';
-import { EmergencyListener } from './components/EmergencyListener.tsx';
 
 function App() {
   return (
     <AuthProvider>
-      <EmergencyListener />
       {/* Toast */}
       <Toaster
         position="top-right"

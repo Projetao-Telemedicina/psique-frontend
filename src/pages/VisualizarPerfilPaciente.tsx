@@ -1,14 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Pencil, Trash2, Wallet, Star, X, Save, Camera, Loader2, MapPin,
+import { 
+  Pencil, Trash2, Wallet, Star, X, Save, Camera, Loader2, MapPin, 
   Plus, History, CheckCircle, ArrowUpCircle, Settings
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 import Sidebar from '../components/Sidebar';
-import EmergencyButton from '../components/EmergencyButton';
-import { EmergencyModal } from "../components/EmergencyModal";
+import EmergencyButton from '../components/EmergencyButton'; 
 import ModalDeletarConta from '../components/ModalDeletarConta';
 import { CampoPerfil } from '../components/CampoPerfil';
 import { useAuth } from '../components/AuthContext';
@@ -62,9 +61,8 @@ interface PerfilResponse {
 export default function VisualizarPerfilPaciente() {
   const navigate = useNavigate();
   const { user, token } = useAuth();
-  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
+  
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -103,14 +101,14 @@ export default function VisualizarPerfilPaciente() {
     const fetchPerfil = async () => {
       const userId = user?.id || localStorage.getItem('userId');
       const activeToken = token || localStorage.getItem('token');
-      if (!activeToken || !userId) {
-        setLoading(false);
-        return;
+      if (!activeToken || !userId) { 
+        setLoading(false); 
+        return; 
       }
 
       try {
-        const response = await fetch(`/api/patient/${userId}/profile`, {
-          headers: {
+        const response = await fetch(`/api/patient/${userId}/profile`, { 
+          headers: { 
             'Authorization': `Bearer ${activeToken}`,
             'Content-Type': 'application/json'
           }
@@ -120,15 +118,15 @@ export default function VisualizarPerfilPaciente() {
           setDados(data);
         }
         setLoading(false);
-      } catch (err) {
-        console.error("Erro conexão:", err);
+      } catch (err) { 
+        console.error("Erro conexão:", err); 
         toast.error("Erro ao carregar os dados do perfil.");
         setLoading(false);
       }
     };
     fetchPerfil();
   }, [user, token]);
-
+  
   const validarCampos = (): boolean => {
     if (!dados) return false;
     const { city, state, number, name } = dados.user;
@@ -226,9 +224,9 @@ export default function VisualizarPerfilPaciente() {
           },
           body: JSON.stringify(userPayload)
         }),
-        fetch(`/api/patient/me/profile`, {
-          method: 'PATCH',
-          headers: {
+        fetch(`/api/patient/me/profile`, { 
+          method: 'PATCH', 
+          headers: { 
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${activeToken}`
           },
@@ -250,8 +248,8 @@ export default function VisualizarPerfilPaciente() {
     } catch (err) {
       console.error("Erro ao salvar:", err);
       toast.error("Erro de conexão ao salvar.");
-    } finally {
-      setSaving(false);
+    } finally { 
+      setSaving(false); 
     }
   };
 
@@ -270,7 +268,7 @@ export default function VisualizarPerfilPaciente() {
 
   if (loading) return (
     <div className="h-screen w-full flex items-center justify-center bg-white">
-      <Loader2 className="animate-spin text-teal-600" size={40} />
+        <Loader2 className="animate-spin text-teal-600" size={40} />
     </div>
   );
 
@@ -280,20 +278,15 @@ export default function VisualizarPerfilPaciente() {
     <main className="flex h-screen w-full overflow-hidden bg-[#F8FAFC]">
       <Sidebar role={TIPO_USUARIO} itemAtivo="perfil" />
 
-      <EmergencyModal
-        isOpen={showEmergencyModal}
-        onClose={() => setShowEmergencyModal(false)}
-      />
-
       <section className="flex flex-col flex-1 overflow-hidden text-left">
         <header className="flex items-center justify-between px-8 py-6 bg-white border-b border-slate-100">
           <div>
             <h1 className="text-3xl font-bold text-[#1E293B]">
-              {isEditing ? "Editar Perfil" : "Meu Perfil"}
+                {isEditing ? "Editar Perfil" : "Meu Perfil"}
             </h1>
             <p className="text-slate-500">Gerencie suas informações pessoais e plano.</p>
           </div>
-          <EmergencyButton onClick={() => setShowEmergencyModal(true)} />
+          <EmergencyButton onClick={() => navigate('/emergencia')} />
         </header>
 
         <div className="flex-1 overflow-y-auto p-8 text-left">
@@ -302,7 +295,7 @@ export default function VisualizarPerfilPaciente() {
               <div className="p-8">
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-6">
-                    <div
+                    <div 
                       onClick={() => isEditing && fileInputRef.current?.click()}
                       className={`w-32 h-32 rounded-full flex items-center justify-center text-white shadow-lg border-4 border-white shrink-0 relative overflow-hidden transition-all bg-teal-600 ${isEditing ? 'cursor-pointer hover:opacity-90' : ''}`}
                     >
@@ -330,7 +323,7 @@ export default function VisualizarPerfilPaciente() {
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest w-full">
                         Não gostou das recomendações?
                       </span>
-                      <button
+                      <button 
                         type="button"
                         onClick={() => navigate('/match')}
                         className="w-full text-xs bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-bold shadow-md transition-all active:scale-95"
@@ -342,130 +335,130 @@ export default function VisualizarPerfilPaciente() {
                 </div>
 
                 <div className="border-t border-slate-50 pt-8 text-left">
-                  <div className="grid grid-cols-2 gap-y-6 gap-x-12">
-
-                    <CampoPerfil
-                      label="Nome Completo"
-                      valor={dados.user.name}
-                      isEditing={isEditing}
-                      onChange={(val) => setDados({ ...dados, user: { ...dados.user, name: val } })}
-                    />
-                    <CampoPerfil
-                      label="E-mail"
-                      valor={dados.user.email}
-                      isEditing={isEditing}
-                      onChange={(val) => setDados({ ...dados, user: { ...dados.user, email: val } })}
-                    />
-                    <CampoPerfil
-                      label="Telefone"
-                      valor={maskPhone(dados.user.phone)}
-                      isEditing={isEditing}
-                      onChange={(val) => setDados({ ...dados, user: { ...dados.user, phone: maskPhone(val) } })}
-                    />
-                    <CampoPerfil
-                      label="CPF"
-                      valor={dados.user.cpf}
-                      isEditing={false}
-                    />
-
-                    <div className="col-span-2 mt-4 flex items-center gap-2">
-                      <MapPin size={14} className="text-slate-400" />
-                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Localização</h3>
-                    </div>
-
-                    <CampoPerfil
-                      label="Cidade"
-                      valor={dados.user.city}
-                      isEditing={isEditing}
-                      onChange={(val) => setDados({ ...dados, user: { ...dados.user, city: val } })}
-                    />
-                    <CampoPerfil
-                      label="Estado"
-                      valor={dados.user.state}
-                      isEditing={isEditing}
-                      onChange={(val) => setDados({ ...dados, user: { ...dados.user, state: val } })}
-                    />
-                    <CampoPerfil
-                      label="Rua"
-                      valor={dados.user.street}
-                      isEditing={isEditing}
-                      onChange={(val) => setDados({ ...dados, user: { ...dados.user, street: val } })}
-                    />
-                    <CampoPerfil
-                      label="Número"
-                      valor={dados.user.number}
-                      isEditing={isEditing}
-                      onChange={(val) => setDados({ ...dados, user: { ...dados.user, number: val } })}
-                    />
-
-                    <div className="col-span-2 mt-4">
-                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Segurança e Emergência</h3>
-                    </div>
-
-                    <CampoPerfil
-                      label="Contato de Emergência"
-                      valor={dados.emergencyContactName}
-                      isEditing={isEditing}
-                      onChange={(val) => setDados({ ...dados, emergencyContactName: val })}
-                    />
-                    <CampoPerfil
-                      label="Telefone do Contato"
-                      valor={dados.emergencyContactPhone}
-                      isEditing={isEditing}
-                      onChange={(val) => setDados({ ...dados, emergencyContactPhone: maskPhone(val) })}
-                    />
-
-                    {isEditing && (
-                      <>
-                        <CampoPerfil
-                          label="Senha Atual"
-                          valor={currentPassword}
-                          isEditing={isEditing}
-                          type="password"
-                          onChange={(val) => setCurrentPassword(val)}
-                        />
-                        <CampoPerfil
-                          label="Nova Senha"
-                          valor={newPassword}
-                          isEditing={isEditing}
-                          type="password"
-                          onChange={(val) => setNewPassword(val)}
-                        />
-                      </>
-                    )}
-
-                    <div className="col-span-2 flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                      <input
-                        type="checkbox"
-                        disabled={!isEditing}
-                        checked={dados.shareDiaryWithProfessionals}
-                        onChange={(e) => setDados({ ...dados, shareDiaryWithProfessionals: e.target.checked })}
-                        className="w-5 h-5 accent-teal-600 cursor-pointer"
+                    <div className="grid grid-cols-2 gap-y-6 gap-x-12">
+                      
+                      <CampoPerfil 
+                        label="Nome Completo" 
+                        valor={dados.user.name} 
+                        isEditing={isEditing} 
+                        onChange={(val) => setDados({ ...dados, user: { ...dados.user, name: val } })}
                       />
-                      <span className="text-sm text-slate-600 font-semibold italic">Permitir que meu psicólogo veja meu diário de saúde</span>
+                      <CampoPerfil 
+                        label="E-mail" 
+                        valor={dados.user.email} 
+                        isEditing={isEditing}
+                        onChange={(val) => setDados({ ...dados, user: { ...dados.user, email: val } })}
+                      />
+                      <CampoPerfil 
+                        label="Telefone" 
+                        valor={maskPhone(dados.user.phone)} 
+                        isEditing={isEditing} 
+                        onChange={(val) => setDados({ ...dados, user: { ...dados.user, phone: maskPhone(val) } })}
+                      />
+                      <CampoPerfil 
+                        label="CPF" 
+                        valor={dados.user.cpf} 
+                        isEditing={false} 
+                      />
+
+                      <div className="col-span-2 mt-4 flex items-center gap-2">
+                        <MapPin size={14} className="text-slate-400" />
+                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Localização</h3>
+                      </div>
+                      
+                      <CampoPerfil 
+                        label="Cidade" 
+                        valor={dados.user.city} 
+                        isEditing={isEditing}
+                        onChange={(val) => setDados({ ...dados, user: { ...dados.user, city: val } })}
+                      />
+                      <CampoPerfil 
+                        label="Estado" 
+                        valor={dados.user.state} 
+                        isEditing={isEditing}
+                        onChange={(val) => setDados({ ...dados, user: { ...dados.user, state: val } })}
+                      />
+                      <CampoPerfil 
+                        label="Rua" 
+                        valor={dados.user.street} 
+                        isEditing={isEditing}
+                        onChange={(val) => setDados({ ...dados, user: { ...dados.user, street: val } })}
+                      />
+                      <CampoPerfil 
+                        label="Número" 
+                        valor={dados.user.number} 
+                        isEditing={isEditing}
+                        onChange={(val) => setDados({ ...dados, user: { ...dados.user, number: val } })}
+                      />
+
+                      <div className="col-span-2 mt-4">
+                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Segurança e Emergência</h3>
+                      </div>
+                      
+                      <CampoPerfil 
+                        label="Contato de Emergência" 
+                        valor={dados.emergencyContactName} 
+                        isEditing={isEditing} 
+                        onChange={(val) => setDados({...dados, emergencyContactName: val})} 
+                      />
+                      <CampoPerfil 
+                        label="Telefone do Contato" 
+                        valor={dados.emergencyContactPhone} 
+                        isEditing={isEditing} 
+                        onChange={(val) => setDados({...dados, emergencyContactPhone: maskPhone(val)})} 
+                      />
+
+                      {isEditing && (
+                        <>
+                          <CampoPerfil 
+                            label="Senha Atual"
+                            valor={currentPassword}
+                            isEditing={isEditing}
+                            type="password"
+                            onChange={(val) => setCurrentPassword(val)}
+                          />
+                          <CampoPerfil 
+                            label="Nova Senha"
+                            valor={newPassword}
+                            isEditing={isEditing}
+                            type="password"
+                            onChange={(val) => setNewPassword(val)}
+                          />
+                        </>
+                      )}
+
+                      <div className="col-span-2 flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <input 
+                            type="checkbox" 
+                            disabled={!isEditing}
+                            checked={dados.shareDiaryWithProfessionals}
+                            onChange={(e) => setDados({...dados, shareDiaryWithProfessionals: e.target.checked})}
+                            className="w-5 h-5 accent-teal-600 cursor-pointer"
+                        />
+                        <span className="text-sm text-slate-600 font-semibold italic">Permitir que meu psicólogo veja meu diário de saúde</span>
+                      </div>
                     </div>
-                  </div>
                 </div>
 
                 <div className="flex gap-4 mt-10 border-t border-slate-50 pt-6">
                   {isEditing ? (
-                    <>
-                      <button onClick={() => { setIsEditing(false); setNewPassword(''); setCurrentPassword(''); }} className="flex-1 py-3 bg-white border border-slate-200 text-slate-600 font-bold text-sm rounded-full hover:bg-slate-50 flex items-center justify-center gap-2">
-                        <X size={16} /> Cancelar
-                      </button>
-                      <button onClick={handleSalvar} className="flex-1 py-3 bg-teal-600 text-white font-bold text-sm rounded-full hover:bg-teal-700 shadow-md flex items-center justify-center gap-2">
-                        {saving ? <Loader2 className="animate-spin" size={16} /> : <><Save size={16} /> Salvar Alterações</>}
-                      </button>
-                    </>
+                      <>
+                          <button onClick={() => { setIsEditing(false); setNewPassword(''); setCurrentPassword(''); }} className="flex-1 py-3 bg-white border border-slate-200 text-slate-600 font-bold text-sm rounded-full hover:bg-slate-50 flex items-center justify-center gap-2">
+                              <X size={16} /> Cancelar
+                          </button>
+                          <button onClick={handleSalvar} className="flex-1 py-3 bg-teal-600 text-white font-bold text-sm rounded-full hover:bg-teal-700 shadow-md flex items-center justify-center gap-2">
+                              {saving ? <Loader2 className="animate-spin" size={16} /> : <><Save size={16} /> Salvar Alterações</>}
+                          </button>
+                      </>
                   ) : (
-                    <>
-                      <button onClick={() => setIsDeleteModalOpen(true)} className="flex-1 py-3 bg-red-600 text-white font-bold text-sm rounded-full hover:bg-red-700 shadow-sm flex items-center justify-center gap-2">
-                        <Trash2 size={16} /> Deletar Conta
-                      </button>
-                      <button onClick={() => setIsEditing(true)} className="flex-1 py-3 bg-transparent border border-slate-200 text-slate-600 font-bold text-sm rounded-full hover:bg-slate-50 flex items-center justify-center gap-2">
-                        <Pencil size={16} /> Editar Informações
-                      </button>
-                    </>
+                      <>
+                          <button onClick={() => setIsDeleteModalOpen(true)} className="flex-1 py-3 bg-red-600 text-white font-bold text-sm rounded-full hover:bg-red-700 shadow-sm flex items-center justify-center gap-2">
+                              <Trash2 size={16} /> Deletar Conta
+                          </button>
+                          <button onClick={() => setIsEditing(true)} className="flex-1 py-3 bg-transparent border border-slate-200 text-slate-600 font-bold text-sm rounded-full hover:bg-slate-50 flex items-center justify-center gap-2">
+                              <Pencil size={16} /> Editar Informações
+                          </button>
+                      </>
                   )}
                 </div>
               </div>
@@ -511,7 +504,7 @@ export default function VisualizarPerfilPaciente() {
         </div>
       </section>
 
-      <ModalDeletarConta
+      <ModalDeletarConta 
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleDeleteConfirm}

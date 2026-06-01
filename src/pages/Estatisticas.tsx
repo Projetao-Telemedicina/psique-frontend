@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/AuthContext';
 import Sidebar from '../components/Sidebar';
 import StatCard from '../components/StatCard';
 import EmergencyButton from '../components/EmergencyButton';
-import { EmergencyModal } from "../components/EmergencyModal";
 import { CheckCircle, Timer, Book, Smile, Users, Star, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -21,7 +21,7 @@ const sleepMap: Record<string, string> = {
 
 export default function Estatisticas() {
   const { user } = useAuth();
-  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
+  const navigate = useNavigate();
   const [stats, setStats] = useState({ sessions: 0, hours: 0, diaries: 0, sleep: 0, clients: 0 });
   const [feedData, setFeedData] = useState<any[]>([]);
   const [selectedItem, setSelectedItem] = useState<any>(null);
@@ -38,7 +38,7 @@ export default function Estatisticas() {
           const apps = await appRes.json();
           const reviews = await revRes.json();
           const completed = apps.filter((a: any) => a.status === 'COMPLETED');
-
+          
           setStats({
             sessions: completed.length,
             hours: completed.length * 1,
@@ -55,15 +55,15 @@ export default function Estatisticas() {
           const apps = await appRes.json();
           const diaries = await diaryRes.json();
           const completed = apps.filter((a: any) => a.status === 'COMPLETED');
-
+          
           const sleepWeights: Record<string, number> = { 'EIGHT_OR_MORE': 9, 'SIX_TO_EIGHT': 7, 'FOUR_TO_FIVE': 4.5, 'LESS_THAN_FOUR': 3 };
-
+          
           setStats({
             sessions: completed.length,
             hours: completed.length * 1,
             diaries: diaries.length,
             clients: 0,
-            sleep: diaries.length > 0
+            sleep: diaries.length > 0 
               ? Number((diaries.reduce((acc: number, d: any) => acc + (sleepWeights[d.sleepQuality] || 6), 0) / diaries.length).toFixed(1))
               : 0
           });
@@ -78,17 +78,12 @@ export default function Estatisticas() {
     <main className="flex h-screen w-full bg-[#F8F9FA] overflow-hidden">
       <Sidebar role={user?.role === 'PROFESSIONAL' ? 'profissional' : 'paciente'} itemAtivo="estatisticas" />
 
-      <EmergencyModal
-        isOpen={showEmergencyModal}
-        onClose={() => setShowEmergencyModal(false)}
-      />
-
       <section className="flex flex-col flex-1 p-4 md:p-8 overflow-y-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold text-black">Estatísticas</h1>
-          {user?.role !== 'PROFESSIONAL' && <EmergencyButton onClick={() => setShowEmergencyModal(true)} />}
+          {user?.role !== 'PROFESSIONAL' && <EmergencyButton onClick={() => navigate('/emergencia')} />}
         </div>
-
+        
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="grid grid-cols-2 gap-4 md:gap-6 h-fit w-full lg:w-fit">
             <StatCard value={stats.sessions} label="Sessões concluídas" icon={<CheckCircle size={40} />} />
@@ -125,7 +120,7 @@ export default function Estatisticas() {
           <div className="bg-white p-8 rounded-2xl w-full max-w-lg relative max-h-[80vh] flex flex-col">
             <button onClick={() => setSelectedItem(null)} className="absolute top-4 right-4 text-slate-400 hover:text-black"><X /></button>
             <h2 className="text-xl font-bold mb-6 text-black">Detalhes do Registro</h2>
-
+            
             {selectedItem.feeling ? (
               <div className="space-y-4 text-slate-700 flex-1 overflow-hidden flex flex-col">
                 <p><strong className="text-black">Data:</strong> {new Date(selectedItem.createdAt).toLocaleDateString('pt-BR')}</p>
