@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import EmergencyButton from '../components/EmergencyButton';
+import { EmergencyModal } from "../components/EmergencyModal";
 import { useAuth } from '../components/AuthContext';
 import {MatchModal} from "../components/MatchModal";
 
@@ -53,6 +54,7 @@ interface AppointmentData {
 export default function TelaInicialPaciente() {
     const [showMatchModal, setShowMatchModal] = useState(false);
     const navigate = useNavigate();
+    const [showEmergencyModal, setShowEmergencyModal] = useState(false);
     const { user, token } = useAuth();
 
     const [nomeUsuario, setNomeUsuario] = useState('Paciente');
@@ -161,6 +163,11 @@ export default function TelaInicialPaciente() {
                 role="PATIENT"
             />
 
+            <EmergencyModal 
+                isOpen={showEmergencyModal}
+                onClose={() => setShowEmergencyModal(false)}
+            />
+
             <section className="flex flex-col flex-1 overflow-hidden px-12 py-8 pb-0">
                 <header className="flex items-center justify-between mb-8 shrink-0">
                     <div>
@@ -168,7 +175,7 @@ export default function TelaInicialPaciente() {
                             Bom dia, {nomeUsuario}
                         </h1>
                     </div>
-                    <EmergencyButton onClick={() => navigate('/emergencia')} />
+                    <EmergencyButton onClick={() => setShowEmergencyModal(true)} />
                 </header>
 
                 {loading ? (
