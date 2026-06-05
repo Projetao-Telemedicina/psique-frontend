@@ -26,6 +26,7 @@ import Pacientes from './pages/Pacientes.tsx';
 import Estatisticas from './pages/Estatisticas.tsx';
 import TelaInicialProfissional from './pages/TelaInicialProfissional.tsx';
 import { EmergencyListener } from './components/EmergencyListener.tsx';
+import Chat from './pages/Chat.tsx';
 
 function App() {
   return (
@@ -83,6 +84,7 @@ function App() {
           <Route path='/pacientes' element={<Pacientes />} />
           <Route path='/match' element={<QuestionarioMatch />} />
           <Route path='/agenda' element={<Agenda />} />
+          <Route path='/chat' element={<Chat />} />
         </Route>
       </Routes>
     </AuthProvider>

@@ -235,7 +235,7 @@ export default function TelaInicialProfissional() {
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between flex-1 cursor-pointer hover:shadow-md transition" onClick={() => navigate('/profissional/agenda')}>
+            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between flex-1 cursor-pointer hover:shadow-md transition" onClick={() => navigate('/agenda')}>
               <div className="flex items-center gap-5">
                 <div className="bg-[#EAF5F2] p-4 rounded-xl text-[#52A796]">
                   <Calendar size={24} />
@@ -255,7 +255,7 @@ export default function TelaInicialProfissional() {
             <div className="flex justify-between items-center mb-4 px-1">
               <h3 className="font-bold text-lg text-slate-800">Minha Agenda</h3>
               <button 
-                onClick={() => navigate('/profissional/agenda')}
+                onClick={() => navigate('/agenda')}
                 className="text-[#52A796] text-sm font-semibold hover:underline"
               >
                 Ver agenda completa
@@ -309,7 +309,7 @@ export default function TelaInicialProfissional() {
             <div className="flex justify-between items-center mb-4 px-1">
               <h3 className="font-bold text-lg text-slate-800">Últimas Mensagens</h3>
               <button 
-                onClick={() => navigate('/profissional/chat')}
+                onClick={() => navigate('/chat')}
                 className="text-[#52A796] text-sm font-semibold hover:underline"
               >
                 Abrir chat
