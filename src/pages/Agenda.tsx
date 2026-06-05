@@ -11,6 +11,7 @@ import { useAuth } from '../components/AuthContext';
 import AppointmentHistoryCard from '../components/AppointmentHistoryCard';
 import AppointmentSidebarDetails from '../components/AppointmentSidebarDetails';
 import ReviewModal from '../components/ReviewModal';
+import { GerenciarHorariosModal } from '../components/GerenciarHorariosModal';
 
 export interface Appointment {
   id: string;
@@ -40,6 +41,7 @@ export default function Agenda() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [historyAppointments, setHistoryAppointments] = useState<Appointment[]>([]);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [isGerenciarAgendaOpen, setIsGerenciarAgendaOpen] = useState(false); 
 
   const getSidebarRole = (): "paciente" | "profissional" | "administrador" => {
     if (user?.role === 'PROFESSIONAL') return 'profissional';
@@ -201,9 +203,22 @@ export default function Agenda() {
             <h1 className="text-3xl font-bold text-[#1E293B]">Agenda</h1>
             <p className="text-slate-500 text-sm">Sincronizada com o seu Google Agenda</p>
           </div>
-          {!isProfissional && (
-            <EmergencyButton onClick={() => setShowEmergencyModal(true)} />
-          )}
+
+          <div className="flex gap-3">
+            {/* Botão apenas para Profissional */}
+            {isProfissional && (
+              <button 
+                onClick={() => setIsGerenciarAgendaOpen(true)}
+                className="px-4 py-2 bg-slate-800 text-white rounded-lg font-medium hover:bg-slate-900 transition-colors"
+              >
+                Gerenciar Agenda
+              </button>
+            )}
+
+            {!isProfissional && (
+              <EmergencyButton onClick={() => setShowEmergencyModal(true)} />
+            )}
+          </div>
         </header>
 
         <div className="flex flex-1 overflow-hidden">
@@ -265,6 +280,12 @@ export default function Agenda() {
           )}
         </div>
       </section>
+
+      {/* Modal de Gerenciamento de Agenda */}
+      <GerenciarHorariosModal
+        isOpen={isGerenciarAgendaOpen}
+        onClose={() => setIsGerenciarAgendaOpen(false)}
+      />
 
       {selectedAppointment && (
         <>
