@@ -47,7 +47,7 @@ const patientQuestions: Question[] = [
       { value: 'PSICANALISE', label: 'Psicanálise / Psicodinâmica: Focada no inconsciente, sonhos e na origem profunda dos traumas' },
       { value: 'HUMANISTA', label: 'Humanista / Fenomenológica: Focada no acolhimento, na liberdade de escolha e no momento presente' },
       { value: 'CORPORAL', label: 'Corporal / Bioenergética: Focada na relação entre mente e corpo, trabalhando tensões físicas e energia.' },
-      { value: 'SISTEMICA', label: 'Sistêmica / Familiar: Focada nos padrões de repetição da família e na relação com o sistema' },
+      { value: 'SISTEMICA', label: 'Sistêmica / Familiar: Focada nos padrões de repetição da família e nas relações sociais.' },
       { value: 'DONT_KNOW', label: 'Não conheço as abordagens / Quero a indicação do sistema' }
     ]
   },
