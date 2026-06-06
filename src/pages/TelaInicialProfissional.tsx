@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/AuthContext';
 import Sidebar from '../components/Sidebar';
+import { MatchModal } from "../components/MatchModal";
 import { 
   Play, 
   Users, 
@@ -47,6 +48,11 @@ interface ProfessionalProfile {
 }
 
 export default function TelaInicialProfissional() {
+  const [showMatchModal, setShowMatchModal] = useState(() => {
+    // Verifica se o profissional já fechou o modal nesta sessão/navegador
+    const jaViu = localStorage.getItem('matchModalVisualizado');
+    return jaViu !== 'true'; 
+});
   const { user, token } = useAuth();
   const navigate = useNavigate();
   
@@ -154,6 +160,21 @@ export default function TelaInicialProfissional() {
     <main className="flex h-screen w-full bg-[#F8FAFC] overflow-hidden text-left font-sans antialiased">
       <Sidebar role="profissional" itemAtivo="home"  />
 
+      {/* Modal de Match */}
+            <MatchModal 
+                isOpen={showMatchModal} 
+                onClose={() => {
+                  setShowMatchModal(false);
+                  localStorage.setItem('matchModalVisualizado', 'true');
+                }} 
+                onStart={() => {
+                // Se ele clicar em responder, marcamos como visualizado também
+                  localStorage.setItem('matchModalVisualizado', 'true');
+                  navigate('/match');
+                }}
+                role="PROFESSIONAL"
+            />
+
       <section className="flex flex-col flex-1 p-6 md:p-8 overflow-y-auto gap-8">
         
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex justify-between items-center shrink-0">
@@ -223,7 +244,7 @@ export default function TelaInicialProfissional() {
           </div>
 
           <div className="lg:w-1/3 flex flex-col gap-6">
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between flex-1 cursor-pointer hover:shadow-md transition" onClick={() => navigate('/profissional/pacientes')}>
+            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between flex-1 cursor-pointer hover:shadow-md transition" onClick={() => navigate('/pacientes')}>
               <div className="flex items-center gap-5">
                 <div className="bg-blue-50/60 p-4 rounded-xl text-[#6B9EFA]">
                   <Users size={24} />

@@ -137,15 +137,10 @@ export const ProfessionalForm: React.FC<ProfessionalFormProps> = ({ onStepChange
     }
   };
 
-  const handleTextInputChange = (value: string) => {
-    setTextInputs({ ...textInputs, [question.id]: value });
-  };
-
   const handleNext = () => {
     if (currentStep < professionalQuestions.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Mapeamentos tipados 
       const mapApproach: Record<string, number> = { 'TCC': 0, 'PSYCHANALYSIS': 1, 'HUMANIST': 2, 'CORPORAL': 3, 'SYSTEMIC': 4, 'OTHER': 5 };
       const mapStyle: Record<string, number> = { 'ACTIVE': 0, 'REFLEXIVE': 1, 'SUPPORTIVE': 2, 'BALANCED': 3 };
       const mapGoal: Record<string, number> = { 'CLARITY': 0, 'PRACTICALITY': 1, 'BOTH': 2 };
@@ -161,11 +156,11 @@ export const ProfessionalForm: React.FC<ProfessionalFormProps> = ({ onStepChange
           answers.themes?.includes('SELF_KNOWLEDGE') ? 1 : 0,
           answers.themes?.includes('CRISIS') ? 1 : 0,
         ],
-        abordagem: mapApproach[answers.mainApproach as keyof typeof mapApproach] ?? 5,
-        estiloTerapeutico: mapStyle[answers.postureStyle as keyof typeof mapStyle],
-        objetivo: mapGoal[answers.patientGoalPriority as keyof typeof mapGoal],
+        abordagem: mapApproach[answers.mainApproach] ?? 5,
+        estiloTerapeutico: mapStyle[answers.postureStyle],
+        objetivo: mapGoal[answers.patientGoalPriority],
         genero: userGender,
-        experiencia: mapExp[answers.experienceTime as keyof typeof mapExp],
+        experiencia: mapExp[answers.experienceTime],
         contextos: [
           answers.specialContexts?.includes('LGBTQIA') ? 1 : 0,
           answers.specialContexts?.includes('RACIAL') ? 1 : 0,
@@ -173,51 +168,82 @@ export const ProfessionalForm: React.FC<ProfessionalFormProps> = ({ onStepChange
           answers.specialContexts?.includes('FEMINISM') ? 1 : 0,
           answers.specialContexts?.includes('SPIRITUALITY') ? 1 : 0,
         ],
-        suporteFora: mapSupport[answers.outsideSupport as keyof typeof mapSupport],
-        periodoAtendimento: mapAvailability[answers.availabilityPeriod as keyof typeof mapAvailability],
+        suporteFora: mapSupport[answers.outsideSupport],
+        periodoAtendimento: mapAvailability[answers.availabilityPeriod],
       };
       onFinish(payload);
     }
   };
 
   const isAnswered = () => {
-    const selectedValue = answers[question.id];
-    if (!selectedValue || (question.type === 'checkbox' && selectedValue.length === 0)) return false;
+    const selected = answers[question.id];
+    if (!selected || (question.type === 'checkbox' && selected.length === 0)) return false;
     if (question.type === 'radio') {
-      const opt = question.options.find(o => o.value === selectedValue);
-      if (opt?.hasInput) return !!textInputs[question.id] && textInputs[question.id].trim().length > 0;
+      const opt = question.options.find(o => o.value === selected);
+      if (opt?.hasInput) return !!textInputs[question.id]?.trim();
     }
     return true;
   };
 
   return (
-    <div className="flex-1 flex flex-col p-8 md:p-16 justify-between bg-slate-50 overflow-y-auto h-screen">
-      <div className="max-w-3xl w-full mx-auto my-auto py-8">
-        <span className="text-xs font-bold text-[#2E93D1] tracking-wide uppercase block mb-2">Questão {currentStep + 1}</span>
-        <h2 className="text-xl md:text-2xl font-bold text-slate-800 leading-snug mb-3">{question.title}</h2>
-        <div className="grid grid-cols-1 gap-3 mt-4">
-          {question.options.map((opt) => {
-            const isSelected = question.type === 'radio' ? answers[question.id] === opt.value : (answers[question.id] || []).includes(opt.value);
-            return (
-              <div key={opt.value} className="flex flex-col gap-2 w-full">
-                <button onClick={() => handleSelect(opt.value)} className={`w-full text-left p-5 rounded-2xl border-2 flex items-center justify-between transition-all ${isSelected ? 'border-[#2E93D1] bg-sky-50' : 'border-slate-200 bg-white'}`}>
-                  <span className={`text-sm md:text-base ${isSelected ? 'font-semibold text-slate-900' : 'text-slate-600'}`}>{opt.label}</span>
-                  <div className={`w-5 h-5 rounded-${question.type === 'radio' ? 'full' : 'lg'} border-2 ${isSelected ? 'border-[#2E93D1] bg-[#2E93D1]' : 'border-slate-300'}`} />
-                </button>
-                {isSelected && opt.hasInput && (
-                  <input type="text" placeholder={opt.inputPlaceholder} value={textInputs[question.id] || ''} onChange={(e) => handleTextInputChange(e.target.value)} className="w-full p-4 rounded-xl border-2 border-[#2E93D1] focus:outline-none" />
-                )}
-              </div>
-            );
-          })}
+    <div className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50">
+      <div className="flex-1 flex flex-col px-8 md:px-16 pt-8 overflow-hidden">
+        <div className="max-w-4xl w-full mx-auto flex flex-col h-full">
+          
+          <div className="shrink-0 mb-6">
+            <span className="text-[10px] font-bold text-[#2E93D1] tracking-[0.2em] uppercase block mb-3">
+              Questão {currentStep + 1} de {professionalQuestions.length}
+            </span>
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 leading-tight">
+              {question.title}
+            </h2>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto pr-2 pb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {question.options.map((opt) => {
+                const isSelected = question.type === 'radio' ? answers[question.id] === opt.value : (answers[question.id] || []).includes(opt.value);
+                return (
+                  <div key={opt.value} className="flex flex-col gap-2">
+                    <button 
+                      onClick={() => handleSelect(opt.value)} 
+                      className={`w-full text-left p-5 rounded-2xl border-2 flex items-center justify-between transition-all ${isSelected ? 'border-[#2E93D1] bg-sky-50/50' : 'border-slate-200 bg-white hover:border-slate-300'}`}
+                    >
+                      <span className={`text-sm md:text-base ${isSelected ? 'font-semibold text-slate-900' : 'text-slate-600'}`}>{opt.label}</span>
+                      <div className={`w-5 h-5 rounded-${question.type === 'radio' ? 'full' : 'lg'} border-2 ${isSelected ? 'border-[#2E93D1] bg-[#2E93D1]' : 'border-slate-300'}`} />
+                    </button>
+                    {isSelected && opt.hasInput && (
+                      <input 
+                        type="text" 
+                        placeholder={opt.inputPlaceholder} 
+                        value={textInputs[question.id] || ''} 
+                        onChange={(e) => setTextInputs({ ...textInputs, [question.id]: e.target.value })} 
+                        className="w-full p-4 rounded-xl border-2 border-[#2E93D1] focus:outline-none focus:ring-2 focus:ring-sky-200" 
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
-      <div className="max-w-3xl w-full mx-auto border-t border-slate-200/60 pt-6 flex justify-between">
-        <button onClick={() => setCurrentStep(currentStep - 1)} className={`px-8 py-3.5 rounded-2xl font-bold text-sm border-2 ${currentStep === 0 ? 'opacity-0' : ''}`}>Voltar</button>
-        <button onClick={handleNext} disabled={!isAnswered()} className={`px-14 py-4 rounded-2xl font-bold text-sm text-white ${isAnswered() ? 'bg-[#2E93D1]' : 'bg-slate-300'}`}>
-          {currentStep === professionalQuestions.length - 1 ? 'Concluir' : 'Avançar'}
+
+      <footer className="w-full bg-white border-t border-slate-200 p-6 flex justify-between items-center shrink-0">
+        <button 
+          onClick={() => setCurrentStep(currentStep - 1)} 
+          className={`px-8 py-3 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-100 transition-all ${currentStep === 0 ? 'invisible' : ''}`}
+        >
+          Voltar
         </button>
-      </div>
+        <button 
+          onClick={handleNext} 
+          disabled={!isAnswered()} 
+          className={`px-12 py-3 rounded-xl font-bold text-sm text-white shadow-lg transition-all ${isAnswered() ? 'bg-[#2E93D1] hover:bg-[#206E9F]' : 'bg-slate-300 cursor-not-allowed'}`}
+        >
+          {currentStep === professionalQuestions.length - 1 ? 'Concluir' : 'Próxima'}
+        </button>
+      </footer>
     </div>
   );
 };

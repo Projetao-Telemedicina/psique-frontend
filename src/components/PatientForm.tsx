@@ -47,7 +47,7 @@ const patientQuestions: Question[] = [
       { value: 'PSICANALISE', label: 'Psicanálise / Psicodinâmica: Focada no inconsciente, sonhos e na origem profunda dos traumas' },
       { value: 'HUMANISTA', label: 'Humanista / Fenomenológica: Focada no acolhimento, na liberdade de escolha e no momento presente' },
       { value: 'CORPORAL', label: 'Corporal / Bioenergética: Focada na relação entre mente e corpo, trabalhando tensões físicas e energia.' },
-      { value: 'SISTEMICA', label: 'Sistêmica / Familiar: Focada nos padrões de repetição da família e nas relações sociais' },
+      { value: 'SISTEMICA', label: 'Sistêmica / Familiar: Focada nos padrões de repetição da família e na relação com o sistema' },
       { value: 'DONT_KNOW', label: 'Não conheço as abordagens / Quero a indicação do sistema' }
     ]
   },
@@ -145,7 +145,6 @@ export const PatientForm: React.FC<PatientFormProps> = ({ onStepChange, onFinish
     if (currentStep < patientQuestions.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Mapeamento para o que o back espera
       const mapReason: Record<string, number> = { 'EMOTIONAL': 0, 'RELATIONSHIPS': 1, 'PROFESSIONAL': 2, 'SELF_KNOWLEDGE': 3, 'CRISIS': 4, 'NOT_SURE': 5 };
       const mapTime: Record<string, number> = { 'RECENT': 0, 'MONTHS': 1, 'YEARS': 2, 'NOT_SURE': 3 };
       const mapHistory: Record<string, number> = { 'NEVER': 0, 'GOOD_EXP': 1, 'BAD_EXP': 2 };
@@ -185,31 +184,73 @@ export const PatientForm: React.FC<PatientFormProps> = ({ onStepChange, onFinish
   };
 
   return (
-    <div className="flex-1 flex flex-col p-8 md:p-16 justify-between bg-slate-50 overflow-y-auto h-screen">
-      <div className="max-w-3xl w-full mx-auto my-auto py-8">
-        <span className="text-xs font-bold text-[#2E93D1] tracking-wide uppercase block mb-2">Questão {currentStep + 1}</span>
-        <h2 className="text-xl md:text-2xl font-bold text-slate-800 leading-snug mb-3">{question.title}</h2>
-        {question.type === 'checkbox' && <p className="text-xs text-slate-400 font-semibold mb-6 italic">*Você pode selecionar mais de uma opção</p>}
-        <div className="mt-4 grid grid-cols-1 gap-3">
-          {question.options.map((opt) => {
-            const isSelected = question.type === 'radio' ? answers[question.id] === opt.value : (answers[question.id] || []).includes(opt.value);
-            return (
-              <button key={opt.value} onClick={() => handleSelect(opt.value)} className={`w-full text-left p-5 rounded-2xl border-2 flex items-center justify-between transition-all group ${isSelected ? 'border-[#2E93D1] bg-sky-50/50' : 'border-slate-200 bg-white'}`}>
-                <span className={`text-sm md:text-base ${isSelected ? 'font-semibold text-slate-900' : 'text-slate-600'}`}>{opt.label}</span>
-                <div className={`w-5 h-5 rounded-${question.type === 'radio' ? 'full' : 'lg'} border-2 flex items-center justify-center ${isSelected ? 'border-[#2E93D1] bg-[#2E93D1]' : 'border-slate-300'}`}>
-                  {isSelected && (question.type === 'radio' ? <div className="w-1.5 h-1.5 bg-white rounded-full" /> : <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>)}
-                </div>
-              </button>
-            );
-          })}
+    <div className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50">
+      {/* Área central que abriga pergunta e opções */}
+      <div className="flex-1 flex flex-col px-8 md:px-16 pt-8 overflow-hidden">
+        <div className="max-w-4xl w-full mx-auto flex flex-col h-full">
+          
+          {/* Header fixo para evitar corte */}
+          <div className="shrink-0 mb-6">
+            <span className="text-[10px] font-bold text-[#2E93D1] tracking-[0.2em] uppercase block mb-3">
+              Questão {currentStep + 1} de {patientQuestions.length}
+            </span>
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 leading-tight">
+              {question.title}
+            </h2>
+            {question.type === 'checkbox' && (
+              <p className="text-sm text-slate-400 font-medium mt-2 italic">
+                *Você pode selecionar mais de uma opção
+              </p>
+            )}
+          </div>
+          
+          {/* Container de opções com scroll próprio */}
+          <div className="flex-1 overflow-y-auto pr-2 pb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {question.options.map((opt) => {
+                const isSelected = question.type === 'radio' 
+                  ? answers[question.id] === opt.value 
+                  : (answers[question.id] || []).includes(opt.value);
+                return (
+                  <button 
+                    key={opt.value} 
+                    onClick={() => handleSelect(opt.value)} 
+                    className={`w-full text-left p-5 rounded-2xl border-2 flex items-center justify-between transition-all ${
+                      isSelected ? 'border-[#2E93D1] bg-sky-50/50' : 'border-slate-200 bg-white hover:border-slate-300'
+                    }`}
+                  >
+                    <span className={`text-sm md:text-base leading-snug ${isSelected ? 'font-semibold text-slate-900' : 'text-slate-600'}`}>
+                      {opt.label}
+                    </span>
+                    <div className={`w-5 h-5 rounded-${question.type === 'radio' ? 'full' : 'lg'} border-2 flex items-center justify-center shrink-0 ml-3 ${
+                      isSelected ? 'border-[#2E93D1] bg-[#2E93D1]' : 'border-slate-300'
+                    }`}>
+                      {isSelected && (question.type === 'radio' ? <div className="w-1.5 h-1.5 bg-white rounded-full" /> : <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>)}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
-      <div className="max-w-3xl w-full mx-auto border-t border-slate-200/60 pt-6 flex justify-between items-center">
-        <button onClick={() => setCurrentStep(currentStep - 1)} className={`px-8 py-3.5 rounded-2xl font-bold text-sm border-2 border-slate-200 text-slate-500 hover:bg-slate-100 ${currentStep === 0 ? 'opacity-0 pointer-events-none' : ''}`}>Voltar</button>
-        <button onClick={handleNext} disabled={!isAnswered()} className={`px-14 py-4 rounded-2xl font-bold text-sm text-white shadow-lg ${isAnswered() ? 'bg-[#2E93D1] hover:bg-[#206E9F]' : 'bg-slate-300 cursor-not-allowed'}`}>
-          {currentStep === patientQuestions.length - 1 ? 'Concluir' : 'Avançar'}
+
+      {/* Footer fixo */}
+      <footer className="w-full bg-white border-t border-slate-200 p-6 flex justify-between items-center shrink-0">
+        <button 
+          onClick={() => setCurrentStep(currentStep - 1)} 
+          className={`px-8 py-3 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-100 transition-all ${currentStep === 0 ? 'invisible' : ''}`}
+        >
+          Voltar
         </button>
-      </div>
+        <button 
+          onClick={handleNext} 
+          disabled={!isAnswered()} 
+          className={`px-12 py-3 rounded-xl font-bold text-sm text-white shadow-lg transition-all ${isAnswered() ? 'bg-[#2E93D1] hover:bg-[#206E9F]' : 'bg-slate-300 cursor-not-allowed'}`}
+        >
+          {currentStep === patientQuestions.length - 1 ? 'Concluir' : 'Próxima'}
+        </button>
+      </footer>
     </div>
   );
 };
