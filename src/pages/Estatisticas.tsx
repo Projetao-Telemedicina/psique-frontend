@@ -6,6 +6,7 @@ import EmergencyButton from '../components/EmergencyButton';
 import { EmergencyModal } from "../components/EmergencyModal";
 import { CheckCircle, Timer, Book, Smile, Users, Star, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useQuery } from '@tanstack/react-query';
 
 const feelingMap: Record<string, string> = {
   HAPPY: "Feliz", SCARED: "Amedrontado", SAD: "Triste", ANXIOUS: "Ansioso",
@@ -22,57 +23,83 @@ const sleepMap: Record<string, string> = {
 export default function Estatisticas() {
   const { user } = useAuth();
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
-  const [stats, setStats] = useState({ sessions: 0, hours: 0, diaries: 0, sleep: 0, clients: 0 });
-  const [feedData, setFeedData] = useState<any[]>([]);
   const [selectedItem, setSelectedItem] = useState<any>(null);
 
-  useEffect(() => {
-    const loadData = async () => {
-      const token = localStorage.getItem('token');
-      try {
-        if (user?.role === 'PROFESSIONAL') {
-          const [appRes, revRes] = await Promise.all([
-            fetch('/api/appointments/me/history', { headers: { 'Authorization': `Bearer ${token}` } }),
-            fetch('/api/professionals/me/reviews', { headers: { 'Authorization': `Bearer ${token}` } })
-          ]);
-          const apps = await appRes.json();
-          const reviews = await revRes.json();
-          const completed = apps.filter((a: any) => a.status === 'COMPLETED');
+  const token = localStorage.getItem('token');
 
-          setStats({
+  const { data, error } = useQuery({
+    queryKey: ['statistics', user?.id, user?.role],
+    queryFn: async () => {
+      if (!token) throw new Error("Usuário não autenticado.");
+
+      if (user?.role === 'PROFESSIONAL') {
+        const [appRes, revRes] = await Promise.all([
+          fetch('/api/appointments/me/history', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('/api/professionals/me/reviews', { headers: { 'Authorization': `Bearer ${token}` } })
+        ]);
+
+        if (!appRes.ok || !revRes.ok) throw new Error("Erro ao carregar dados do servidor.");
+
+        const apps = await appRes.json();
+        const reviews = await revRes.json();
+        const completed = apps.filter((a: any) => a.status === 'COMPLETED');
+
+        return {
+          stats: {
             sessions: completed.length,
             hours: completed.length * 1,
             clients: new Set(apps.map((a: any) => a.patientId)).size,
             diaries: 0,
             sleep: 0
-          });
-          setFeedData(reviews);
-        } else {
-          const [appRes, diaryRes] = await Promise.all([
-            fetch('/api/appointments/me/history', { headers: { 'Authorization': `Bearer ${token}` } }),
-            fetch('/api/diaries/me', { headers: { 'Authorization': `Bearer ${token}` } })
-          ]);
-          const apps = await appRes.json();
-          const diaries = await diaryRes.json();
-          const completed = apps.filter((a: any) => a.status === 'COMPLETED');
+          },
+          feedData: reviews
+        };
+      } else {
+        const [appRes, diaryRes] = await Promise.all([
+          fetch('/api/appointments/me/history', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('/api/diaries/me', { headers: { 'Authorization': `Bearer ${token}` } })
+        ]);
 
-          const sleepWeights: Record<string, number> = { 'EIGHT_OR_MORE': 9, 'SIX_TO_EIGHT': 7, 'FOUR_TO_FIVE': 4.5, 'LESS_THAN_FOUR': 3 };
+        if (!appRes.ok || !diaryRes.ok) throw new Error("Erro ao carregar dados do servidor.");
 
-          setStats({
+        const apps = await appRes.json();
+        const diaries = await diaryRes.json();
+        const completed = apps.filter((a: any) => a.status === 'COMPLETED');
+
+        const sleepWeights: Record<string, number> = { 
+          'EIGHT_OR_MORE': 9, 'SIX_TO_EIGHT': 7, 'FOUR_TO_FIVE': 4.5, 'LESS_THAN_FOUR': 3 
+        };
+
+        const sleepAvg = diaries.length > 0
+          ? Number((diaries.reduce((acc: number, d: any) => acc + (sleepWeights[d.sleepQuality] || 6), 0) / diaries.length).toFixed(1))
+          : 0;
+
+        return {
+          stats: {
             sessions: completed.length,
             hours: completed.length * 1,
             diaries: diaries.length,
             clients: 0,
-            sleep: diaries.length > 0
-              ? Number((diaries.reduce((acc: number, d: any) => acc + (sleepWeights[d.sleepQuality] || 6), 0) / diaries.length).toFixed(1))
-              : 0
-          });
-          setFeedData(diaries);
-        }
-      } catch (err) { toast.error("Erro ao carregar dados"); }
-    };
-    loadData();
-  }, [user]);
+            sleep: sleepAvg
+          },
+          feedData: diaries
+        };
+      }
+    },
+    // A query só roda se tivermos o usuário e o token disponíveis
+    enabled: !!user && !!token,
+  });
+
+  // Efeito simples apenas para disparar toasts em caso de erro na requisição
+  useEffect(() => {
+    if (error) {
+      toast.error("Erro ao carregar dados");
+    }
+  }, [error]);
+
+  // Fallbacks seguros enquanto os dados estão carregando ou se falharem
+  const stats = data?.stats ?? { sessions: 0, hours: 0, diaries: 0, sleep: 0, clients: 0 };
+  const feedData = data?.feedData ?? [];
 
   return (
     <main className="flex h-screen w-full bg-[#F8F9FA] overflow-hidden">
@@ -110,7 +137,7 @@ export default function Estatisticas() {
             <h3 className="font-bold text-lg mb-4 text-black">{user?.role === 'PROFESSIONAL' ? 'Avaliações' : 'Diário'}</h3>
             <div className="space-y-3 w-full">
               {feedData.map((item: any) => (
-                <div key={item.id} onClick={() => setSelectedItem(item)} className="cursor-pointer bg-white p-4 rounded-xl border border-slate-200 hover:shadow-md transition w-full">
+                <div key={item.id} onClick={() => setSelectedItem(item)} className="cursor-pointer bg-white p-4 rounded-xl border border-slate-200 hover:shadow-md transition w-full text-left">
                   <p className="font-medium text-black truncate">{item.comment || (item.content ? item.content.substring(0, 50) + '...' : "Ver registro")}</p>
                   <p className="text-sm text-slate-400">{new Date(item.createdAt).toLocaleDateString('pt-BR')}</p>
                 </div>
@@ -124,10 +151,10 @@ export default function Estatisticas() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white p-8 rounded-2xl w-full max-w-lg relative max-h-[80vh] flex flex-col">
             <button onClick={() => setSelectedItem(null)} className="absolute top-4 right-4 text-slate-400 hover:text-black"><X /></button>
-            <h2 className="text-xl font-bold mb-6 text-black">Detalhes do Registro</h2>
+            <h2 className="text-xl font-bold mb-6 text-black text-left">Detalhes do Registro</h2>
 
             {selectedItem.feeling ? (
-              <div className="space-y-4 text-slate-700 flex-1 overflow-hidden flex flex-col">
+              <div className="space-y-4 text-slate-700 flex-1 overflow-hidden flex flex-col text-left">
                 <p><strong className="text-black">Data:</strong> {new Date(selectedItem.createdAt).toLocaleDateString('pt-BR')}</p>
                 <p><strong className="text-black">Sentimento:</strong> {feelingMap[selectedItem.feeling] || selectedItem.feeling}</p>
                 <p><strong className="text-black">Qualidade do sono:</strong> {sleepMap[selectedItem.sleepQuality] || selectedItem.sleepQuality}</p>
@@ -139,7 +166,7 @@ export default function Estatisticas() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-4 text-slate-700 flex-1 flex flex-col overflow-hidden">
+              <div className="space-y-4 text-slate-700 flex-1 flex flex-col overflow-hidden text-left">
                 <p><strong className="text-black">Nota:</strong> {selectedItem.rating} estrelas</p>
                 <div className="bg-slate-50 p-4 rounded-xl flex-1 flex flex-col overflow-hidden">
                   <p className="text-sm font-bold text-black mb-2">Comentário:</p>

@@ -5,11 +5,20 @@ import EmergencyButton from '../components/EmergencyButton';
 import { EmergencyModal } from "../components/EmergencyModal";
 import { useAuth } from '../components/AuthContext';
 import { toast } from "react-hot-toast";
+import { useMutation } from "@tanstack/react-query";
+
 // --- Types ---
 type MoodId = "feliz" | "amedrontado" | "calmo" | "triste" | "ansioso" | "esperancoso" | "raivoso" | "tranquilo" | "cansado";
 type SleepOption = "Dormi 8 horas ou mais" | "Dormi entre 6 a 8 horas" | "Dormi entre 4 a 5 horas" | "Dormi menos que 4 horas";
 
 type Mood = { id: MoodId; label: string; emoji: string; };
+
+interface DiaryPayload {
+  feeling: string;
+  sleepQuality: string;
+  symptom: string;
+  content: string;
+}
 
 const moods: Mood[] = [
   { id: "feliz", label: "Feliz", emoji: "😊" },
@@ -67,16 +76,12 @@ export default function Diario() {
 
   const getSidebarRole = () => user?.role === 'PROFESSIONAL' ? 'profissional' : user?.role === 'ADMIN' ? 'administrador' : 'paciente';
 
-  async function handleSubmitDiary() {
-    const token = localStorage.getItem("token");
-    if (!token) return toast.error("Usuário não autenticado.");
-    const payload = {
-      feeling: moodToFeeling[selectedMood],
-      sleepQuality: sleepToQuality[selectedSleep],
-      symptom: "Nenhum",
-      content: diaryText,
-    };
-    try {
+
+  const saveDiaryMutation = useMutation({
+    mutationFn: async (payload: DiaryPayload) => {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Usuário não autenticado.");
+
       const response = await fetch("/api/diaries", {
         method: "POST",
         headers: {
@@ -85,18 +90,33 @@ export default function Diario() {
         },
         body: JSON.stringify(payload),
       });
+
       const data = await response.json();
-      if (response.ok) {
-        toast.success("Diário salvo com sucesso!");
-        setDiaryText("");
-      } else {
-        console.error("Erro do Backend:", data);
-        toast.error(data.message || "Erro ao salvar diário.");
+      
+
+      if (!response.ok) {
+        throw new Error(data.message || "Erro ao salvar diário.");
       }
-    } catch {
-      toast.error("Erro de conexão com o servidor.");
+
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Diário salvo com sucesso!");
+      setDiaryText(""); 
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Erro de conexão com o servidor.");
     }
-  }
+  });
+
+  const handleSubmitDiary = () => {
+    saveDiaryMutation.mutate({
+      feeling: moodToFeeling[selectedMood],
+      sleepQuality: sleepToQuality[selectedSleep],
+      symptom: "Nenhum",
+      content: diaryText,
+    });
+  };
 
   return (
     <main className="flex h-screen w-full overflow-hidden bg-[#F8FAFC]">
@@ -154,13 +174,16 @@ export default function Diario() {
                   value={diaryText}
                   onChange={(e) => setDiaryText(e.target.value)}
                   placeholder="Escreva aqui como foi seu dia..."
-                  className="w-full min-h-[200px] p-6 rounded-2xl bg-white border border-slate-200 shadow-sm focus:ring-2 focus:ring-[#59bd91] outline-none text-slate-700"
+                  disabled={saveDiaryMutation.isPending} // Desabilita o campo durante o envio
+                  className="w-full min-h-[200px] p-6 rounded-2xl bg-white border border-slate-200 shadow-sm focus:ring-2 focus:ring-[#59bd91] outline-none text-slate-700 disabled:opacity-60"
                 />
                 <button
                   onClick={handleSubmitDiary}
-                  className="absolute bottom-4 right-4 flex items-center gap-2 px-6 py-3 rounded-full bg-[#59bd91] text-white font-bold hover:bg-[#4ea880] transition"
+                  disabled={saveDiaryMutation.isPending} // Evita duplo clique bloqueando o botão
+                  className="absolute bottom-4 right-4 flex items-center gap-2 px-6 py-3 rounded-full bg-[#59bd91] text-white font-bold hover:bg-[#4ea880] transition disabled:bg-slate-400 disabled:cursor-not-allowed"
                 >
-                  <Send size={18} /> Enviar
+                  <Send size={18} /> 
+                  {saveDiaryMutation.isPending ? "Enviando..." : "Enviar"}
                 </button>
               </div>
             </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Sidebar from '../components/Sidebar';
@@ -12,6 +12,7 @@ import AppointmentHistoryCard from '../components/AppointmentHistoryCard';
 import AppointmentSidebarDetails from '../components/AppointmentSidebarDetails';
 import ReviewModal from '../components/ReviewModal';
 import { GerenciarHorariosModal } from '../components/GerenciarHorariosModal';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export interface Appointment {
   id: string;
@@ -33,13 +34,14 @@ export interface Appointment {
 
 export default function Agenda() {
   const { user } = useAuth();
+  const queryClient = useQueryClient(); // Instância para gerenciar o cache global
+
+  // Estados locais apenas para controle de UI (Modais e Seleções)
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [historyAppointments, setHistoryAppointments] = useState<Appointment[]>([]);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isGerenciarAgendaOpen, setIsGerenciarAgendaOpen] = useState(false); 
 
@@ -50,137 +52,134 @@ export default function Agenda() {
   };
 
   const isProfissional = getSidebarRole() === 'profissional';
+  const token = localStorage.getItem('token');
 
-  const fetchUpcomingAppointments = async () => {
-    try {
-      const token = localStorage.getItem('token');
+  // --- LEITURA DE DADOS (QUERIES) ---
+
+  // 1. Buscar consultas futuras
+  const { data: appointments = [] } = useQuery({
+    queryKey: ['appointments', 'upcoming'],
+    queryFn: async () => {
       const response = await fetch('/api/appointments/me/upcoming', {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
       });
-      if (response.ok) {
-        setAppointments(await response.json());
-      } else {
-        toast.error("Erro ao carregar os compromissos da agenda.");
-      }
-    } catch {
-      toast.error("Erro de conexão com o servidor.");
-    }
-  };
+      if (!response.ok) throw new Error("Erro ao carregar os compromissos da agenda.");
+      return response.json() as Promise<Appointment[]>;
+    },
+    enabled: !!token,
+  });
 
-  const fetchAppointmentsHistory = async () => {
-    try {
-      const token = localStorage.getItem('token');
+  // 2. Buscar histórico de consultas
+  const { data: historyAppointments = [] } = useQuery({
+    queryKey: ['appointments', 'history'],
+    queryFn: async () => {
       const response = await fetch('/api/appointments/me/history', {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
       });
-      if (response.ok) {
-        setHistoryAppointments(await response.json());
-      }
-    } catch {
-      console.error("Erro ao carregar histórico de consultas do servidor.");
-    }
+      if (!response.ok) throw new Error("Erro ao carregar histórico de consultas do servidor.");
+      return response.json() as Promise<Appointment[]>;
+    },
+    enabled: !!token,
+  });
+
+  // Helper centralizado para invalidar os dados da agenda e forçar a atualização da tela
+  const invalidarAgendaCompleta = () => {
+    queryClient.invalidateQueries({ queryKey: ['appointments'] });
   };
 
-  useEffect(() => {
-    fetchUpcomingAppointments();
-    fetchAppointmentsHistory();
-  }, []);
 
-  const handleJoinCall = async (appointment: Appointment) => {
-    try {
-      const token = localStorage.getItem('token');
+  // --- AÇÕES DO USUÁRIO (MUTATIONS) ---
+
+  // 1. Entrar na chamada de vídeo
+  const joinCallMutation = useMutation({
+    mutationFn: async (appointment: Appointment) => {
       const appointmentId = (appointment as any).id || (appointment as any).appointment_id;
-
       const response = await fetch(`/api/appointments/${appointmentId}/can-join`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
-      if (response.ok && data.canJoin) {
-        window.open(data.meetLink, '_blank', 'noopener,noreferrer');
-      } else {
-        toast.error(data.message || "Acesso à sala indisponível no momento.");
+      if (!response.ok || !data.canJoin) {
+        throw new Error(data.message || "Acesso à sala indisponível no momento.");
       }
-    } catch {
-      toast.error("Erro ao verificar permissão da chamada.");
+      return data.meetLink;
+    },
+    onSuccess: (meetLink) => {
+      window.open(meetLink, '_blank', 'noopener,noreferrer');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
     }
-  };
+  });
 
-  const handleDownloadCertificate = async (id: string) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
+  // 2. Baixar comprovante/certificado
+  const downloadCertificateMutation = useMutation({
+    mutationFn: async (id: string) => {
+      if (!token) throw new Error("Sessão expirada. Faça login novamente.");
       const response = await fetch(`/api/appointments/${id}/certificate`, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/pdf'
-        }
+        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/pdf' }
       });
-
-      if (!response.ok) {
-        if (response.status === 401) toast.error("Sessão expirada. Faça login novamente.");
-        throw new Error("Erro ao baixar o documento");
-      }
-
-      const blob = await response.blob();
+      if (!response.ok) throw new Error("Não foi possível gerar ou baixar o comprovante.");
+      return response.blob();
+    },
+    onSuccess: (blob, id) => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', `comprovante-${id}.pdf`);
       document.body.appendChild(link);
       link.click();
-
       link.parentNode?.removeChild(link);
       window.URL.revokeObjectURL(url);
-    } catch {
-      toast.error("Não foi possível gerar ou baixar o comprovante.");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
     }
-  };
+  });
 
-  const handleMarkAsCompleted = async (id: string) => {
-    try {
-      const token = localStorage.getItem('token');
+  // 3. Concluir consulta realizada
+  const completeAppointmentMutation = useMutation({
+    mutationFn: async (id: string) => {
       const response = await fetch(`/api/appointments/${id}/complete`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
       });
-
-      if (response.ok) {
-        toast.success("Consulta concluída com sucesso!");
-        setSelectedAppointment(null);
-        fetchUpcomingAppointments();
-        fetchAppointmentsHistory();
-      } else {
+      if (!response.ok) {
         const errorData = await response.json();
-        toast.error(errorData.message || "Erro ao concluir a consulta.");
+        throw new Error(errorData.message || "Erro ao concluir a consulta.");
       }
-    } catch {
-      toast.error("Erro de conexão com o servidor.");
+    },
+    onSuccess: () => {
+      toast.success("Consulta concluída com sucesso!");
+      setSelectedAppointment(null);
+      invalidarAgendaCompleta();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
     }
-  };
+  });
 
-  const handleMarkAsNoShow = async (id: string) => {
-    try {
-      const token = localStorage.getItem('token');
+  // 4. Registrar ausência (No-Show)
+  const noShowAppointmentMutation = useMutation({
+    mutationFn: async (id: string) => {
       const response = await fetch(`/api/appointments/${id}/no-show`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
       });
-
-      if (response.ok) {
-        toast.success("Ausência registrada com sucesso!");
-        setSelectedAppointment(null);
-        fetchUpcomingAppointments();
-        fetchAppointmentsHistory();
-      } else {
+      if (!response.ok) {
         const errorData = await response.json();
-        toast.error(errorData.message || "Erro ao registrar ausência.");
+        throw new Error(errorData.message || "Erro ao registrar ausência.");
       }
-    } catch {
-      toast.error("Erro de conexão com o servidor.");
+    },
+    onSuccess: () => {
+      toast.success("Ausência registrada com sucesso!");
+      setSelectedAppointment(null);
+      invalidarAgendaCompleta();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
     }
-  };
+  });
 
   const getParticipantName = (app: Appointment) => {
     if (app.professional?.user?.name) return app.professional.user.name;
@@ -205,7 +204,6 @@ export default function Agenda() {
           </div>
 
           <div className="flex gap-3">
-            {/* Botão apenas para Profissional */}
             {isProfissional && (
               <button 
                 onClick={() => setIsGerenciarAgendaOpen(true)}
@@ -247,8 +245,8 @@ export default function Agenda() {
                       histApp={histApp}
                       isProfissional={isProfissional}
                       getParticipantName={getParticipantName}
-                      handleDownloadCertificate={handleDownloadCertificate}
-                      handleMarkAsNoShow={handleMarkAsNoShow}
+                      handleDownloadCertificate={(id) => downloadCertificateMutation.mutate(id)}
+                      handleMarkAsNoShow={(id) => noShowAppointmentMutation.mutate(id)}
                       onOpenReview={() => {
                         setReviewingId(histApp.id);
                         setIsReviewOpen(true);
@@ -271,9 +269,9 @@ export default function Agenda() {
               isProfissional={isProfissional}
               getParticipantName={getParticipantName}
               onClose={() => setSelectedAppointment(null)}
-              handleJoinCall={handleJoinCall}
-              handleMarkAsCompleted={handleMarkAsCompleted}
-              handleMarkAsNoShow={handleMarkAsNoShow}
+              handleJoinCall={(app) => joinCallMutation.mutate(app)}
+              handleMarkAsCompleted={(id) => completeAppointmentMutation.mutate(id)}
+              handleMarkAsNoShow={(id) => noShowAppointmentMutation.mutate(id)}
               setIsRescheduleOpen={setIsRescheduleOpen}
               setIsCancelOpen={setIsCancelOpen}
             />
@@ -281,7 +279,6 @@ export default function Agenda() {
         </div>
       </section>
 
-      {/* Modal de Gerenciamento de Agenda */}
       <GerenciarHorariosModal
         isOpen={isGerenciarAgendaOpen}
         onClose={() => setIsGerenciarAgendaOpen(false)}
@@ -295,8 +292,7 @@ export default function Agenda() {
             appointment={selectedAppointment}
             onSuccess={() => {
               setSelectedAppointment(null);
-              fetchUpcomingAppointments();
-              fetchAppointmentsHistory();
+              invalidarAgendaCompleta(); // Atualiza a lista após cancelar
             }}
           />
           <AppointmentRescheduleModal
@@ -305,8 +301,7 @@ export default function Agenda() {
             appointment={selectedAppointment}
             onSuccess={() => {
               setSelectedAppointment(null);
-              fetchUpcomingAppointments();
-              fetchAppointmentsHistory();
+              invalidarAgendaCompleta(); // Atualiza a lista após remarcar
             }}
           />
         </>
@@ -321,7 +316,7 @@ export default function Agenda() {
           }}
           appointmentId={reviewingId}
           onSuccess={() => {
-            fetchAppointmentsHistory();
+            invalidarAgendaCompleta(); // Sincroniza dados pós-avaliação
           }}
         />
       )}

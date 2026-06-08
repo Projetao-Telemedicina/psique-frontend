@@ -12,6 +12,8 @@ import { EmergencyModal } from "../components/EmergencyModal";
 import ModalDeletarConta from '../components/ModalDeletarConta';
 import { CampoPerfil } from '../components/CampoPerfil';
 import { useAuth } from '../components/AuthContext';
+// 1. Importamos as ferramentas do React Query
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface UpdateUserPayload {
   name: string;
@@ -62,169 +64,67 @@ interface PerfilResponse {
 export default function VisualizarPerfilPaciente() {
   const navigate = useNavigate();
   const { user, token } = useAuth();
-  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
+  const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [dados, setDados] = useState<PerfilResponse | null>(null);
 
-  // Estados para Senhas
+  // Estado local para manipulação do formulário
+  const [dados, setDados] = useState<PerfilResponse | null>(null);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
   const TIPO_USUARIO = 'paciente';
+  const userId = user?.id || localStorage.getItem('userId');
+  const activeToken = token || localStorage.getItem('token');
 
-  const handleDeleteConfirm = async (senha: string) => {
-    const activeToken = token || localStorage.getItem('token');
-    const response = await fetch(`/api/users/${dados?.userId}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${activeToken}`
-      },
-      body: JSON.stringify({ password: senha })
-    });
+  // --- 2. QUERY: BUSCA DE DADOS ---
+  const { isLoading, error } = useQuery({
+    queryKey: ['patientProfile', userId],
+    queryFn: async () => {
+      if (!activeToken || !userId) throw new Error("Credenciais ausentes");
+      
+      const response = await fetch(`/api/patient/${userId}/profile`, {
+        headers: {
+          'Authorization': `Bearer ${activeToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) throw new Error("Erro ao carregar o perfil");
+      return response.json() as Promise<PerfilResponse>;
+    },
+    enabled: !!activeToken && !!userId,
+  });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Erro ao deletar conta.");
-    }
-
-    localStorage.clear();
-    toast.success("Sua conta foi excluída com sucesso.");
-    setIsDeleteModalOpen(false);
-    navigate('/login');
-  };
-
+  // Sincroniza o estado do formulário sempre que a Query trouxer dados novos do servidor
+  const queryData = queryClient.getQueryData<PerfilResponse>(['patientProfile', userId]);
   useEffect(() => {
-    const fetchPerfil = async () => {
-      const userId = user?.id || localStorage.getItem('userId');
-      const activeToken = token || localStorage.getItem('token');
-      if (!activeToken || !userId) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const response = await fetch(`/api/patient/${userId}/profile`, {
-          headers: {
-            'Authorization': `Bearer ${activeToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setDados(data);
-        }
-        setLoading(false);
-      } catch (err) {
-        console.error("Erro conexão:", err);
-        toast.error("Erro ao carregar os dados do perfil.");
-        setLoading(false);
-      }
-    };
-    fetchPerfil();
-  }, [user, token]);
-
-  const validarCampos = (): boolean => {
-    if (!dados) return false;
-    const { city, state, number, name } = dados.user;
-    const { emergencyContactName, emergencyContactPhone } = dados;
-
-    // RegEx padrões
-    const regexAlfabeticoComAcentos = /^[A-Za-zÀ-ÿçÇ\s\-]+$/;
-    const regexEstado = /^[A-Za-zÀ-ÿ\s]{2,}$/;
-    const regexNumeroEndereco = /^[0-9]+[A-Za-z]?$|^[sS]\/[nN]$|^[sS]em\s[nN]úmero$/;
-
-    // 1. Validação do Nome do Paciente
-    if (!name || !regexAlfabeticoComAcentos.test(name.trim())) {
-      toast.error("O campo Nome Completo deve conter apenas caracteres alfabéticos.");
-      return false;
+    if (queryData) {
+      setDados(queryData);
     }
+  }, [queryData]);
 
-    // 2. Validação da Cidade
-    if (!city || !regexAlfabeticoComAcentos.test(city.trim())) {
-      toast.error("O campo Cidade deve conter apenas caracteres alfabéticos.");
-      return false;
+  // Toast de erro para falha na busca de dados
+  useEffect(() => {
+    if (error) {
+      toast.error("Erro ao carregar os dados do perfil.");
     }
+  }, [error]);
 
-    // 3. Validação do Estado
-    const stateTrimmed = state ? state.trim() : "";
-    if (!regexEstado.test(stateTrimmed)) {
-      toast.error("O campo Estado é inválido. Use apenas caracteres alfabéticos (Ex: PE ou Pernambuco).");
-      return false;
-    }
-
-    // 4. Validação do Número do Endereço
-    const numberTrimmed = number ? number.trim() : "";
-    if (!regexNumeroEndereco.test(numberTrimmed)) {
-      toast.error("O campo Número deve ser um valor numérico válido (ex: 123, 123B) ou 'S/N'.");
-      return false;
-    }
-
-    // 5. Validação do Nome do Contato de Emergência
-    if (!emergencyContactName || !regexAlfabeticoComAcentos.test(emergencyContactName.trim())) {
-      toast.error("O Nome do Contato de Emergência deve conter apenas caracteres alfabéticos.");
-      return false;
-    }
-
-    // 6. Validação do Telefone de Emergência (Verifica se contém dígitos mínimos)
-    const phoneLimpo = emergencyContactPhone.replace(/\D/g, "");
-    if (phoneLimpo.length < 10 || phoneLimpo.length > 11) {
-      toast.error("O Telefone do Contato de Emergência deve ser um número válido com DDD.");
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleSalvar = async () => {
-    if (!dados) return;
-    if (!validarCampos()) return;
-    setSaving(true);
-    const activeToken = token || localStorage.getItem('token');
-
-    try {
-      // 1. Payload de atualização do Usuário Geral
-      const userPayload: UpdateUserPayload = {
-        name: dados.user.name,
-        phone: dados.user.phone.replace(/\D/g, ""),
-        avatarUrl: dados.user.avatarUrl,
-        city: dados.user.city,
-        state: dados.user.state,
-        street: dados.user.street,
-        number: dados.user.number,
-        patientProfile: {
-          emergencyContactName: dados.emergencyContactName,
-          emergencyContactPhone: dados.emergencyContactPhone.replace(/\D/g, ""),
-          shareDiaryWithProfessionals: dados.shareDiaryWithProfessionals
-        }
-      };
-
-      // 2. Payload específico do paciente (com as senhas)
-      const patientPayload: UpdatePatientOnlyPayload = {
-        emergencyContactName: dados.emergencyContactName,
-        emergencyContactPhone: dados.emergencyContactPhone.replace(/\D/g, ""),
-        shareDiaryWithProfessionals: dados.shareDiaryWithProfessionals,
-      };
-
-      if (newPassword.trim() !== '') {
-        patientPayload.currentPassword = currentPassword;
-        patientPayload.newPassword = newPassword;
-      }
-
-      // Executa as chamadas concorrentes para as duas APIs
+  // --- 3. MUTATION: SALVAR ALTERAÇÕES ---
+  const updateProfileMutation = useMutation({
+    mutationFn: async (payloads: { userPayload: UpdateUserPayload, patientPayload: UpdatePatientOnlyPayload }) => {
       const requisicoes = [
-        fetch(`/api/users/${dados.userId}`, {
+        fetch(`/api/users/${dados?.userId}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${activeToken}`
           },
-          body: JSON.stringify(userPayload)
+          body: JSON.stringify(payloads.userPayload)
         }),
         fetch(`/api/patient/me/profile`, {
           method: 'PATCH',
@@ -232,27 +132,128 @@ export default function VisualizarPerfilPaciente() {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${activeToken}`
           },
-          body: JSON.stringify(patientPayload)
+          body: JSON.stringify(payloads.patientPayload)
         })
       ];
 
       const [resUser, resPatient] = await Promise.all(requisicoes);
-
-      if (resUser.ok && resPatient.ok) {
-        setIsEditing(false);
-        setCurrentPassword('');
-        setNewPassword('');
-        toast.success("Perfil atualizado com sucesso!");
-      } else {
-        const errorText = !resUser.ok ? "Erro ao atualizar dados cadastrais." : "Erro ao atualizar dados clínicos.";
-        toast.error(errorText);
-      }
-    } catch (err) {
-      console.error("Erro ao salvar:", err);
-      toast.error("Erro de conexão ao salvar.");
-    } finally {
-      setSaving(false);
+      if (!resUser.ok) throw new Error("Erro ao atualizar dados cadastrais.");
+      if (!resPatient.ok) throw new Error("Erro ao atualizar dados clínicos.");
+      
+      return true;
+    },
+    onSuccess: () => {
+      // Invalida o cache para forçar uma nova busca em background e atualizar a tela
+      queryClient.invalidateQueries({ queryKey: ['patientProfile', userId] });
+      setIsEditing(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      toast.success("Perfil atualizado com sucesso!");
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Erro de conexão ao salvar.");
     }
+  });
+
+  // --- 4. MUTATION: EXCLUIR CONTA ---
+  const deleteAccountMutation = useMutation({
+    mutationFn: async (senha: string) => {
+      const response = await fetch(`/api/users/${dados?.userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${activeToken}`
+        },
+        body: JSON.stringify({ password: senha })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Erro ao deletar conta.");
+      }
+    },
+    onSuccess: () => {
+      localStorage.clear();
+      toast.success("Sua conta foi excluída com sucesso.");
+      setIsDeleteModalOpen(false);
+      navigate('/login');
+    },
+    onError: (err: any) => {
+      toast.error(err.message);
+    }
+  });
+
+  const validarCampos = (): boolean => {
+    if (!dados) return false;
+    const { city, state, number, name } = dados.user;
+    const { emergencyContactName, emergencyContactPhone } = dados;
+
+    const regexAlfabeticoComAcentos = /^[A-Za-zÀ-ÿçÇ\s\-]+$/;
+    const regexEstado = /^[A-Za-zÀ-ÿ\s]{2,}$/;
+    const regexNumeroEndereco = /^[0-9]+[A-Za-z]?$|^[sS]\/[nN]$|^[sS]em\s[nN]úmero$/;
+
+    if (!name || !regexAlfabeticoComAcentos.test(name.trim())) {
+      toast.error("O campo Nome Completo deve conter apenas caracteres alfabéticos.");
+      return false;
+    }
+    if (!city || !regexAlfabeticoComAcentos.test(city.trim())) {
+      toast.error("O campo Cidade deve conter apenas caracteres alfabéticos.");
+      return false;
+    }
+    const stateTrimmed = state ? state.trim() : "";
+    if (!regexEstado.test(stateTrimmed)) {
+      toast.error("O campo Estado é inválido. Use apenas caracteres alfabéticos (Ex: PE ou Pernambuco).");
+      return false;
+    }
+    const numberTrimmed = number ? number.trim() : "";
+    if (!regexNumeroEndereco.test(numberTrimmed)) {
+      toast.error("O campo Número deve ser um valor numérico válido (ex: 123, 123B) ou 'S/N'.");
+      return false;
+    }
+    if (!emergencyContactName || !regexAlfabeticoComAcentos.test(emergencyContactName.trim())) {
+      toast.error("O Nome do Contato de Emergência deve conter apenas caracteres alfabéticos.");
+      return false;
+    }
+    const phoneLimpo = emergencyContactPhone.replace(/\D/g, "");
+    if (phoneLimpo.length < 10 || phoneLimpo.length > 11) {
+      toast.error("O Telefone do Contato de Emergência deve ser um número válido com DDD.");
+      return false;
+    }
+    return true;
+  };
+
+  const handleSalvar = () => {
+    if (!dados) return;
+    if (!validarCampos()) return;
+
+    const userPayload: UpdateUserPayload = {
+      name: dados.user.name,
+      phone: dados.user.phone.replace(/\D/g, ""),
+      avatarUrl: dados.user.avatarUrl,
+      city: dados.user.city,
+      state: dados.user.state,
+      street: dados.user.street,
+      number: dados.user.number,
+      patientProfile: {
+        emergencyContactName: dados.emergencyContactName,
+        emergencyContactPhone: dados.emergencyContactPhone.replace(/\D/g, ""),
+        shareDiaryWithProfessionals: dados.shareDiaryWithProfessionals
+      }
+    };
+
+    const patientPayload: UpdatePatientOnlyPayload = {
+      emergencyContactName: dados.emergencyContactName,
+      emergencyContactPhone: dados.emergencyContactPhone.replace(/\D/g, ""),
+      shareDiaryWithProfessionals: dados.shareDiaryWithProfessionals,
+    };
+
+    if (newPassword.trim() !== '') {
+      patientPayload.currentPassword = currentPassword;
+      patientPayload.newPassword = newPassword;
+    }
+
+    // Dispara a mutação do React Query
+    updateProfileMutation.mutate({ userPayload, patientPayload });
   };
 
   const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -268,7 +269,7 @@ export default function VisualizarPerfilPaciente() {
 
   const maskPhone = (v: string = "") => v.replace(/\D/g, "").replace(/^(\d\d)(\d{5})(\d{4}).*/, "($1) $2-$3").substring(0, 15);
 
-  if (loading) return (
+  if (isLoading) return (
     <div className="h-screen w-full flex items-center justify-center bg-white">
       <Loader2 className="animate-spin text-teal-600" size={40} />
     </div>
@@ -343,7 +344,6 @@ export default function VisualizarPerfilPaciente() {
 
                 <div className="border-t border-slate-50 pt-8 text-left">
                   <div className="grid grid-cols-2 gap-y-6 gap-x-12">
-
                     <CampoPerfil
                       label="Nome Completo"
                       valor={dados.user.name}
@@ -450,11 +450,11 @@ export default function VisualizarPerfilPaciente() {
                 <div className="flex gap-4 mt-10 border-t border-slate-50 pt-6">
                   {isEditing ? (
                     <>
-                      <button onClick={() => { setIsEditing(false); setNewPassword(''); setCurrentPassword(''); }} className="flex-1 py-3 bg-white border border-slate-200 text-slate-600 font-bold text-sm rounded-full hover:bg-slate-50 flex items-center justify-center gap-2">
+                      <button onClick={() => { setIsEditing(false); setNewPassword(''); setCurrentPassword(''); if(queryData) setDados(queryData); }} className="flex-1 py-3 bg-white border border-slate-200 text-slate-600 font-bold text-sm rounded-full hover:bg-slate-50 flex items-center justify-center gap-2">
                         <X size={16} /> Cancelar
                       </button>
-                      <button onClick={handleSalvar} className="flex-1 py-3 bg-teal-600 text-white font-bold text-sm rounded-full hover:bg-teal-700 shadow-md flex items-center justify-center gap-2">
-                        {saving ? <Loader2 className="animate-spin" size={16} /> : <><Save size={16} /> Salvar Alterações</>}
+                      <button onClick={handleSalvar} disabled={updateProfileMutation.isPending} className="flex-1 py-3 bg-teal-600 text-white font-bold text-sm rounded-full hover:bg-teal-700 shadow-md flex items-center justify-center gap-2 disabled:opacity-70">
+                        {updateProfileMutation.isPending ? <Loader2 className="animate-spin" size={16} /> : <><Save size={16} /> Salvar Alterações</>}
                       </button>
                     </>
                   ) : (
@@ -514,7 +514,7 @@ export default function VisualizarPerfilPaciente() {
       <ModalDeletarConta
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleDeleteConfirm}
+        onConfirm={(senha) => deleteAccountMutation.mutate(senha)}
         tipoUsuario={TIPO_USUARIO}
         temConsultasAbertas={false}
       />

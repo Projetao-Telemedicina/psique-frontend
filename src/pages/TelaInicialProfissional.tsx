@@ -13,6 +13,8 @@ import {
   Loader2
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+// 1. Importamos o hook useQuery
+import { useQuery } from '@tanstack/react-query';
 
 interface PatientUser {
   name: string;
@@ -51,13 +53,12 @@ export default function TelaInicialProfissional() {
   const { user, token } = useAuth();
   const navigate = useNavigate();
   const [showMatchModal, setShowMatchModal] = useState(false);
+
+  // Mantemos o controle do modal de onboarding via localStorage no carregamento do user
   useEffect(() => {
-    // Só verificamos se o usuário já estiver carregado
     if (user?.id) {
       const userKey = `matchModalVisualizado_${user.id}`;
       const jaViu = localStorage.getItem(userKey);
-      
-      // Se não houver registro para este ID específico, mostramos o modal
       if (jaViu !== 'true') {
         setShowMatchModal(true);
       }
@@ -70,89 +71,76 @@ export default function TelaInicialProfissional() {
     }
     setShowMatchModal(false);
   };
-  
-  const [currentDate, setCurrentDate] = useState("");
-  const [profile, setProfile] = useState<ProfessionalProfile | null>(null);
-  const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([]);
-  const [activePatientsCount, setActivePatientsCount] = useState(0);
-  const [weeklySessionsCount, setWeeklySessionsCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const today = new Date();
-    const dayOfWeek = today.toLocaleDateString('pt-BR', { weekday: 'long' });
-    const day = today.getDate();
-    const month = today.toLocaleDateString('pt-BR', { month: 'long' });
-    
-    const formatted = `Hoje é ${dayOfWeek}, ${day} de ${month.charAt(0).toUpperCase() + month.slice(1)}.`;
-    setCurrentDate(formatted);
-  }, []);
+  // Cálculo síncrono da data atual (dispensa useState e useEffect dedicados)
+  const today = new Date();
+  const dayOfWeek = today.toLocaleDateString('pt-BR', { weekday: 'long' });
+  const day = today.getDate();
+  const month = today.toLocaleDateString('pt-BR', { month: 'long' });
+  const currentDate = `Hoje é ${dayOfWeek}, ${day} de ${month.charAt(0).toUpperCase() + month.slice(1)}.`;
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      if (!token) return;
-
-      try {
-        const headers = { 
+  // --- 2. QUERY: PERFIL DO PROFISSIONAL ---
+  const { data: profile } = useQuery({
+    queryKey: ['professionalProfile', user?.id],
+    queryFn: async () => {
+      const res = await fetch('/users/me', {
+        headers: { 
           'Authorization': `Bearer ${token}`, 
           'Content-Type': 'application/json' 
-        };
-
-        const profileRes = await fetch('/users/me', { headers });
-        if (profileRes.ok) {
-          const profileData = await profileRes.json();
-          setProfile({
-            name: profileData.name || '',
-            avatarUrl: profileData.avatarUrl || null
-          });
         }
+      });
+      if (!res.ok) throw new Error("Erro ao carregar perfil");
+      const profileData = await res.json();
+      return {
+        name: profileData.name || '',
+        avatarUrl: profileData.avatarUrl || null
+      } as ProfessionalProfile;
+    },
+    enabled: !!token && !!user?.id,
+  });
 
-        // 2. Busca consultas futuras agendadas
-        const res = await fetch('/appointments/me/upcoming', { headers });
-        if (res.ok) {
-          const data: Appointment[] = await res.json();
-          setUpcomingAppointments(data);
-
-          // Pacientes Ativos
-          const uniquePatients = new Set(data.map(app => app.patientId));
-          setActivePatientsCount(uniquePatients.size);
-
-          // Sessões na Semana
-          const now = new Date();
-          const currentDay = now.getDay(); 
-          const distanceToMonday = currentDay === 0 ? 6 : currentDay - 1;
-          
-          const startOfWeek = new Date(now);
-          startOfWeek.setDate(now.getDate() - distanceToMonday);
-          startOfWeek.setHours(0, 0, 0, 0);
-          
-          const endOfWeek = new Date(startOfWeek);
-          endOfWeek.setDate(startOfWeek.getDate() + 6);
-          endOfWeek.setHours(23, 59, 59, 999);
-
-          const weeklyApps = data.filter(app => {
-            const appDate = new Date(app.startsAt);
-            return appDate >= startOfWeek && appDate <= endOfWeek;
-          });
-          setWeeklySessionsCount(weeklyApps.length);
+  // --- 3. QUERY: CONSULTAS AGENDADAS ---
+  const { data: upcomingAppointments = [], isLoading } = useQuery({
+    queryKey: ['upcomingAppointments', user?.id],
+    queryFn: async () => {
+      const res = await fetch('/appointments/me/upcoming', {
+        headers: { 
+          'Authorization': `Bearer ${token}`, 
+          'Content-Type': 'application/json' 
         }
-      } catch (error) {
-        console.error("Erro ao carregar dados reais do painel:", error);
-        toast.error("Não foi possível sincronizar todos os dados reais.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      });
+      if (!res.ok) throw new Error("Erro ao carregar consultas futuras");
+      return res.json() as Promise<Appointment[]>;
+    },
+    enabled: !!token && !!user?.id,
+  });
 
-    fetchDashboardData();
-  }, [token]);
+  // --- 4. ESTADOS DERIVADOS (CÁLCULOS EM TEMPO DE EXECUÇÃO) ---
+  const uniquePatients = new Set(upcomingAppointments.map(app => app.patientId));
+  const activePatientsCount = uniquePatients.size;
+
+  const now = new Date();
+  const currentDay = now.getDay(); 
+  const distanceToMonday = currentDay === 0 ? 6 : currentDay - 1;
+  
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - distanceToMonday);
+  startOfWeek.setHours(0, 0, 0, 0);
+  
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+
+  const weeklySessionsCount = upcomingAppointments.filter(app => {
+    const appDate = new Date(app.startsAt);
+    return appDate >= startOfWeek && appDate <= endOfWeek;
+  }).length;
+
+  const nextSession = upcomingAppointments.length > 0 ? upcomingAppointments[0] : null;
 
   const formatTime = (dateString: string) => {
     return new Date(dateString).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   };
-
-
-  const nextSession = upcomingAppointments.length > 0 ? upcomingAppointments[0] : null;
 
   const messagesMock = [
     { id: 1, name: 'Aisha Rahman', text: 'Dra, podemos mudar o horário de amanhã?', time: '10:42', unread: true, avatar: 'https://randomuser.me/api/portraits/women/44.jpg' },
@@ -175,19 +163,17 @@ export default function TelaInicialProfissional() {
     <main className="flex h-screen w-full bg-[#F8FAFC] overflow-hidden text-left font-sans antialiased">
       <Sidebar role="profissional" itemAtivo="home"  />
 
-      {/* Modal de Match */}
-            <MatchModal 
-                isOpen={showMatchModal} 
-                onClose={() => (handleCloseModal(false))}
-                onStart={() => {
-                  handleCloseModal(true);
-                  navigate('/match');
-                }}
-                role="PROFESSIONAL"
-            />
+      <MatchModal 
+        isOpen={showMatchModal} 
+        onClose={() => handleCloseModal(false)}
+        onStart={() => {
+          handleCloseModal(true);
+          navigate('/match');
+        }}
+        role="PROFESSIONAL"
+      />
 
       <section className="flex flex-col flex-1 p-6 md:p-8 overflow-y-auto gap-8">
-        
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex justify-between items-center shrink-0">
           <div>
             <h1 className="text-[22px] font-bold text-slate-800">Visão Geral</h1>
@@ -256,7 +242,7 @@ export default function TelaInicialProfissional() {
 
           <div className="lg:w-1/3 flex flex-col gap-6">
             <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between flex-1 cursor-pointer hover:shadow-md transition" onClick={() => navigate('/pacientes')}>
-              <div className="flex items-center gap-5">
+              <div className="flex items-center gap-5 text-left">
                 <div className="bg-blue-50/60 p-4 rounded-xl text-[#6B9EFA]">
                   <Users size={24} />
                 </div>
@@ -268,7 +254,7 @@ export default function TelaInicialProfissional() {
             </div>
 
             <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between flex-1 cursor-pointer hover:shadow-md transition" onClick={() => navigate('/agenda')}>
-              <div className="flex items-center gap-5">
+              <div className="flex items-center gap-5 text-left">
                 <div className="bg-[#EAF5F2] p-4 rounded-xl text-[#52A796]">
                   <Calendar size={24} />
                 </div>
@@ -282,7 +268,6 @@ export default function TelaInicialProfissional() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8 pb-8">
-          
           <div className="lg:w-2/3 flex flex-col">
             <div className="flex justify-between items-center mb-4 px-1">
               <h3 className="font-bold text-lg text-slate-800">Minha Agenda</h3>
@@ -377,7 +362,6 @@ export default function TelaInicialProfissional() {
               ))}
             </div>
           </div>
-
         </div>
       </section>
     </main>
