@@ -144,10 +144,10 @@ function CadastroPaciente() {
                                 <div className="flex flex-col md:flex-row gap-6">
                                     <div className="flex-1 flex flex-col items-start">
                                         <label className="text-navy font-semibold mb-1">Nome completo</label>
-                                        <input type="text" name="name" value={formData.name} onChange={handleChange} className="bg-input-bg rounded-xl w-full px-4 py-3 outline-none border border-transparent focus:border-navy" placeholder="Seu nome" required />
+                                        <input type="text" name="name" value={formData.name} onChange={handleChange} className="bg-input-bg text-black rounded-xl w-full px-4 py-3 outline-none border border-transparent focus:border-navy" placeholder="Seu nome" required />
                                     </div>
                                     <div className="flex-1 flex flex-col items-start">
-                                        <label className="text-navy font-semibold mb-1">Data de nascimento</label>
+                                        <label className="text-navy font-semibold mb-1">Data de nascimento</label> {/* ajeitar a cor para preto e do input também TODO*/}
                                         <input type="date" name="birthDate" value={formData.birthDate} onChange={handleChange} className="bg-input-bg rounded-xl w-full px-4 py-3 outline-none border border-transparent focus:border-navy" required />
                                     </div>
                                 </div>
@@ -155,10 +155,10 @@ function CadastroPaciente() {
                                 <div className="flex flex-col md:flex-row gap-6">
                                     <div className="flex-1 flex flex-col items-start">
                                         <label className="text-navy font-semibold mb-1">E-mail</label>
-                                        <input type="email" name="email" value={formData.email} onChange={handleChange} className="bg-input-bg rounded-xl w-full px-4 py-3 outline-none border border-transparent focus:border-navy" placeholder="email@exemplo.com" required />
+                                        <input type="email" name="email" value={formData.email} onChange={handleChange} className="bg-input-bg text-black rounded-xl w-full px-4 py-3 outline-none border border-transparent focus:border-navy" placeholder="email@exemplo.com" required />
                                     </div>
                                     <div className="flex-1 flex flex-col items-start">
-                                        <label className="text-navy font-semibold mb-1">Gênero</label>
+                                        <label className="text-navy font-semibold mb-1">Gênero</label> {/* ajeitar a cor para preto e do input também TODO */}
                                         <select name="gender" value={formData.gender} onChange={handleChange} className="bg-input-bg rounded-xl w-full px-4 py-3 outline-none border border-transparent focus:border-navy appearance-none" required>
                                             <option value="">Selecione</option>
                                             <option value="Feminino">Feminino</option>
@@ -171,11 +171,11 @@ function CadastroPaciente() {
                                 <div className="flex flex-col md:flex-row gap-6">
                                     <div className="flex-1 flex flex-col items-start">
                                         <label className="text-navy font-semibold mb-1">CPF</label>
-                                        <input type="text" name="cpf" value={formData.cpf} onChange={handleChange} className="bg-input-bg rounded-xl w-full px-4 py-3 outline-none border border-transparent focus:border-navy" placeholder="000.000.000-00" required />
+                                        <input type="text" name="cpf" value={formData.cpf} onChange={handleChange} className="bg-input-bg text-black rounded-xl w-full px-4 py-3 outline-none border border-transparent focus:border-navy" placeholder="000.000.000-00" required />
                                     </div>
                                     <div className="flex-1 flex flex-col items-start">
                                         <label className="text-navy font-semibold mb-1">Telefone</label>
-                                        <input type="tel" name="phone" value={formData.phone} onChange={handleChange} className="bg-input-bg rounded-xl w-full px-4 py-3 outline-none border border-transparent focus:border-navy" placeholder="(00) 00000-0000" required />
+                                        <input type="tel" name="phone" value={formData.phone} onChange={handleChange} className="bg-input-bg text-black rounded-xl w-full px-4 py-3 outline-none border border-transparent focus:border-navy" placeholder="(00) 00000-0000" required />
                                     </div>
                                 </div>
                             </div>
@@ -187,31 +187,31 @@ function CadastroPaciente() {
                                 <div className="flex flex-col md:flex-row gap-6">
                                     <div className="flex-1 flex flex-col items-start">
                                         <label className="text-navy font-semibold mb-1">CEP</label>
-                                        <input type="text" name="cep" value={formData.cep} onChange={handleChange} className="bg-input-bg rounded-xl w-full px-4 py-3 border border-transparent focus:border-navy outline-none" placeholder="00000-000" required />
+                                        <input type="text" name="cep" value={formData.cep} onChange={handleChange} className="bg-input-bg text-black rounded-xl w-full px-4 py-3 border border-transparent focus:border-navy outline-none" placeholder="00000-000" required />
                                     </div>
                                     <div className="w-full md:w-1/3 flex flex-col items-start">
                                         <label className="text-navy font-semibold mb-1">Estado (UF)</label>
-                                        <input type="text" name="state" value={formData.state} onChange={handleChange} className="bg-input-bg rounded-xl w-full px-4 py-3 border border-transparent focus:border-navy outline-none" placeholder="Ex: PI" required />
+                                        <input type="text" name="state" value={formData.state} onChange={handleChange} className="bg-input-bg text-black rounded-xl w-full px-4 py-3 border border-transparent focus:border-navy outline-none" placeholder="Ex: PI" required />
                                     </div>
                                 </div>
                                 <div className="flex flex-col md:flex-row gap-6">
                                     <div className="flex-1 flex flex-col items-start">
                                         <label className="text-navy font-semibold mb-1">Cidade</label>
-                                        <input type="text" name="city" value={formData.city} onChange={handleChange} className="bg-input-bg rounded-xl w-full px-4 py-3 border border-transparent focus:border-navy outline-none" required />
+                                        <input type="text" name="city" value={formData.city} onChange={handleChange} className="bg-input-bg text-black rounded-xl w-full px-4 py-3 border border-transparent focus:border-navy outline-none" required />
                                     </div>
                                     <div className="flex-1 flex flex-col items-start">
                                         <label className="text-navy font-semibold mb-1">Bairro</label>
-                                        <input type="text" name="neighborhood" value={formData.neighborhood} onChange={handleChange} className="bg-input-bg rounded-xl w-full px-4 py-3 border border-transparent focus:border-navy outline-none" required />
+                                        <input type="text" name="neighborhood" value={formData.neighborhood} onChange={handleChange} className="bg-input-bg text-black rounded-xl w-full px-4 py-3 border border-transparent focus:border-navy outline-none" required />
                                     </div>
                                 </div>
                                 <div className="flex flex-col md:flex-row gap-6">
                                     <div className="flex-[2] flex flex-col items-start">
                                         <label className="text-navy font-semibold mb-1">Rua/Logradouro</label>
-                                        <input type="text" name="street" value={formData.street} onChange={handleChange} className="bg-input-bg rounded-xl w-full px-4 py-3 border border-transparent focus:border-navy outline-none" required />
+                                        <input type="text" name="street" value={formData.street} onChange={handleChange} className="bg-input-bg text-black rounded-xl w-full px-4 py-3 border border-transparent focus:border-navy outline-none" required />
                                     </div>
                                     <div className="flex-1 flex flex-col items-start">
                                         <label className="text-navy font-semibold mb-1">Número</label>
-                                        <input type="text" name="number" value={formData.number} onChange={handleChange} className="bg-input-bg rounded-xl w-full px-4 py-3 border border-transparent focus:border-navy outline-none" required />
+                                        <input type="text" name="number" value={formData.number} onChange={handleChange} className="bg-input-bg text-black rounded-xl w-full px-4 py-3 border border-transparent focus:border-navy outline-none" required />
                                     </div>
                                 </div>
                             </div>
@@ -243,14 +243,14 @@ function CadastroPaciente() {
                                     <div className="flex-1 flex flex-col items-start">
                                         <label className="text-navy font-semibold mb-1">Senha</label>
                                         <div className="relative w-full">
-                                            <input type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} className="bg-input-bg rounded-xl w-full px-4 py-3 border border-transparent focus:border-navy outline-none" required />
+                                            <input type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} className="bg-input-bg text-black rounded-xl w-full px-4 py-3 border border-transparent focus:border-navy outline-none" required />
                                             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-3 text-navy/50">{showPassword ? <EyeOff size={20} /> : <Eye size={20} />}</button>
                                         </div>
                                     </div>
                                     <div className="flex-1 flex flex-col items-start">
                                         <label className="text-navy font-semibold mb-1">Confirmar Senha</label>
                                         <div className="relative w-full">
-                                            <input type={showConfirmPassword ? "text" : "password"} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} className="bg-input-bg rounded-xl w-full px-4 py-3 border border-transparent focus:border-navy outline-none" required />
+                                            <input type={showConfirmPassword ? "text" : "password"} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} className="bg-input-bg text-black rounded-xl w-full px-4 py-3 border border-transparent focus:border-navy outline-none" required />
                                             <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-3 text-navy/50">{showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}</button>
                                         </div>
                                     </div>
