@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import EmergencyButton from '../components/EmergencyButton';
-import { EmergencyModal } from "../components/EmergencyModal";
 import { useAuth } from '../components/AuthContext';
 
 const DEFAULT_AVATAR = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
@@ -58,7 +57,6 @@ export default function MarcarComProfissional() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { user, token } = useAuth();
-    const [showEmergencyModal, setShowEmergencyModal] = useState(false);
 
     const [prof, setProf] = useState<ProfessionalData | null>(null);
     const [gradeHorarios, setGradeHorarios] = useState<DaySchedule[]>([]);
@@ -276,15 +274,10 @@ export default function MarcarComProfissional() {
                 itemAtivo="home"
             />
 
-            <EmergencyModal
-                isOpen={showEmergencyModal}
-                onClose={() => setShowEmergencyModal(false)}
-            />
-
             <section className="flex flex-col flex-1 overflow-y-auto px-12 py-8 scrollbar-thin">
                 <header className="flex items-center justify-between mb-10 shrink-0">
                     <h1 className="text-sm font-semibold text-slate-500">Profissional</h1>
-                    <EmergencyButton onClick={() => setShowEmergencyModal(true)} />
+                    <EmergencyButton onClick={() => navigate('/emergencia')} />
                 </header>
 
                 <div className="flex flex-col max-w-6xl w-full gap-8">

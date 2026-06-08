@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import { ChevronLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import EmergencyButton from "../components/EmergencyButton";
-import { EmergencyModal } from "../components/EmergencyModal";
 import { useAuth } from "../components/AuthContext";
 
 interface RecommendationFormat {
@@ -76,8 +75,8 @@ function LinhaProfissional({ prof, renderStars, defaultAvatar }: {
 }
 
 function CompatibilidadeComProfissionais() {
+    const navigate = useNavigate();
     const { user, token } = useAuth();
-    const [showEmergencyModal, setShowEmergencyModal] = useState(false);
 
     const [profissionais, setProfissionais] = useState<RecommendationFormat[]>([]);
     const [loading, setLoading] = useState(true);
@@ -140,11 +139,6 @@ function CompatibilidadeComProfissionais() {
         <main className="flex h-screen w-full overflow-hidden bg-white font-sans antialiased text-slate-800">
             <Sidebar role={TIPO_USUARIO} itemAtivo="home" />
 
-            <EmergencyModal
-                isOpen={showEmergencyModal}
-                onClose={() => setShowEmergencyModal(false)}
-            />
-
             <section className="flex flex-col flex-1 overflow-hidden px-12 py-8 relative">
                 <div className="flex items-center justify-between mb-6 shrink-0 w-full">
                     <Link
@@ -154,7 +148,7 @@ function CompatibilidadeComProfissionais() {
                         <ChevronLeft size={48} className="group-hover:-translate-x-1 transition-transform" />
                         <span className="text-lg font-medium">Voltar</span>
                     </Link>
-                    <EmergencyButton onClick={() => setShowEmergencyModal(true)} />
+                    <EmergencyButton onClick={() => navigate('/emergencia')} />
                 </div>
 
                 <header className="mb-8 shrink-0 w-fit flex flex-col items-start pl-[12px]">
@@ -173,6 +167,7 @@ function CompatibilidadeComProfissionais() {
                             <LinhaProfissional
                                 key={prof.professionalId}
                                 prof={prof}
+
                                 renderStars={renderStarsFromScore}
                                 defaultAvatar={DEFAULT_AVATAR}
                             />
