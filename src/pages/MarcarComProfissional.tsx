@@ -43,6 +43,16 @@ interface DaySchedule {
     slots: TimeSlot[];
 }
 
+interface ReviewData {
+    id: string;
+    appointmentId: string;
+    patientId: string;
+    professionalId: string;
+    rating: number;
+    comment: string;
+    createdAt: string;
+}
+
 export default function MarcarComProfissional() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -55,6 +65,10 @@ export default function MarcarComProfissional() {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedSlot, setSelectedSlot] = useState<{ date: string; time: string } | null>(null);
+
+    const [isReviewsModalOpen, setIsReviewsModalOpen] = useState(false);
+    const [reviews, setReviews] = useState<ReviewData[]>([]);
+    const [reviewsLoading, setReviewsLoading] = useState(false);
 
     const HORARIOS_ATENDIMENTO = ['09:00', '10:00', '12:00', '14:00', '16:00', '17:00'];
 
@@ -186,7 +200,6 @@ export default function MarcarComProfissional() {
                 navigate('/paciente/home');
             } else {
                 console.error('Erro real do backend:', data);
-
                 const errorMessage = Array.isArray(data.message) ? data.message.join(', ') : data.message;
                 alert(errorMessage || `Erro ${res.status}: Falha no servidor.`);
             }
@@ -198,18 +211,61 @@ export default function MarcarComProfissional() {
         }
     };
 
-    const renderStars = (score: string) => {
-        const numStars = Math.round(parseFloat(score || '0'));
-        if (numStars === 0) return <span className="text-xs text-gray-400">Sem avaliações</span>;
+    const handleAbrirAvaliacoes = async () => {
+        setIsReviewsModalOpen(true);
+        if (reviews.length > 0) return; // Evita buscar novamente se já carregou
+
+        setReviewsLoading(true);
+        try {
+            const activeToken = token || localStorage.getItem('token');
+            const headers: HeadersInit = activeToken ? {
+                'Authorization': `Bearer ${activeToken}`,
+                'Content-Type': 'application/json'
+            } : { 'Content-Type': 'application/json' };
+
+            const res = await fetch(`/api/professionals/${id}/reviews?page=1&limit=10`, { headers });
+
+            if (res.ok) {
+                const data = await res.json();
+                setReviews(data);
+            } else {
+                console.error('Falha ao carregar as avaliações');
+            }
+        } catch (error) {
+            console.error("Erro ao buscar avaliações:", error);
+        } finally {
+            setReviewsLoading(false);
+        }
+    };
+
+    const renderStars = (scoreAvg: string | number, reviewCount?: number) => {
+        const parsedScore = typeof scoreAvg === 'string' ? parseFloat(scoreAvg || '0') : scoreAvg;
+
+        if (reviewCount === 0 || parsedScore === 0) {
+            return <span className="text-xs text-gray-400 font-normal">Sem avaliações</span>;
+        }
+
+        const numStars = Math.round(parsedScore);
+
         return (
-            <div className="flex gap-0.5 text-amber-400 text-sm">
-                {"★".repeat(numStars)}{"☆".repeat(5 - numStars)}
+            <div className="flex items-center gap-1.5">
+                <div className="flex gap-0.5 text-amber-400 text-sm tracking-tighter select-none">
+                    {"★".repeat(Math.max(0, Math.min(5, numStars)))}
+                    <span className="text-gray-300">
+                        {"★".repeat(Math.max(0, Math.min(5, 5 - numStars)))}
+                    </span>
+                </div>
+                <span className="text-xs font-bold text-slate-600">
+                    {Number(scoreAvg).toFixed(2)}
+                </span>
             </div>
         );
     };
 
     if (loading) return <div className="flex h-screen items-center justify-center bg-white">Carregando dados...</div>;
     if (!prof) return <div className="flex h-screen items-center justify-center bg-white text-red-500">Profissional não encontrado.</div>;
+
+    const primeiroNomeProfissional = prof.user.name.split(' ')[0] || "Profissional";
 
     return (
         <main className="flex h-screen w-full overflow-hidden bg-white font-sans antialiased text-slate-800">
@@ -233,7 +289,12 @@ export default function MarcarComProfissional() {
                                 <h2 className="text-xl font-bold text-slate-800">{prof.user.name}</h2>
                                 {renderStars(prof.scoreAvg)}
                             </div>
-                            <p className="text-sm text-gray-400 font-medium cursor-pointer hover:underline">Ver avaliações &gt;</p>
+                            <p
+                                onClick={handleAbrirAvaliacoes}
+                                className="text-sm text-gray-400 font-medium cursor-pointer hover:text-slate-600 transition-colors inline-block"
+                            >
+                                Ver avaliações &gt;
+                            </p>
                             <p className="text-sm text-gray-400 leading-relaxed max-w-2xl mt-2">{prof.user.bio}</p>
                         </div>
                         <div className="md:w-64 shrink-0 mt-2">
@@ -283,7 +344,10 @@ export default function MarcarComProfissional() {
 
                     {/* Grade de Horários */}
                     <div className="mt-4">
-                        <h3 className="text-sm font-bold text-slate-600 mb-6">Próximos horários disponíveis</h3>
+                        <h3 className="text-sm font-bold text-slate-600 mb-1">Próximos horários disponíveis</h3>
+                        <p className="text-xs text-gray-400 mb-6">
+                            Para marcar uma consulta com este profissional, clique no horário que deseja e depois confirme.
+                        </p>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-10 pb-12">
                             {gradeHorarios.map((dia, idx) => (
@@ -319,12 +383,10 @@ export default function MarcarComProfissional() {
                 </div>
             </section>
 
-            {/* MODAL DE CONFIRMAÇÃO */}
+            {/* MODAL DE CONFIRMAÇÃO DE AGENDAMENTO */}
             {isModalOpen && selectedSlot && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
                     <div className="relative w-[500px] bg-[#EAEAEA] rounded-[4px] p-10 pt-12 shadow-2xl text-left font-sans">
-
-                        {/* Botão X para fechar */}
                         <button
                             onClick={() => setIsModalOpen(false)}
                             className="absolute top-6 right-6 text-black hover:text-gray-700 text-2xl font-light cursor-pointer transition-colors"
@@ -332,22 +394,18 @@ export default function MarcarComProfissional() {
                             ✕
                         </button>
 
-                        {/* Nome do Profissional */}
                         <h2 className="text-[32px] font-normal tracking-tight text-[#000000] mb-6">
                             {prof.user.name}
                         </h2>
 
-                        {/* Data e Horário */}
                         <p className="text-[24px] font-normal text-[#000000] mb-0.5">
                             {selectedSlot.date} às {selectedSlot.time}
                         </p>
 
-                        {/* Subtítulo de Status */}
                         <p className="text-[14px] font-bold text-[#7A7A7A] mb-8">
                             Horário livre
                         </p>
 
-                        {/* Botão de Confirmação Primário */}
                         <button
                             onClick={handleConfirmarAgendamento}
                             disabled={bookingLoading}
@@ -355,6 +413,59 @@ export default function MarcarComProfissional() {
                         >
                             {bookingLoading ? 'Processando...' : 'Agendar'}
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {isReviewsModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-xs p-4">
+                    <div className="relative w-full max-w-4xl bg-[#EEEEEE] rounded-3xl p-10 max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
+
+                        {/* Botão de Fechar */}
+                        <button
+                            onClick={() => setIsReviewsModalOpen(false)}
+                            className="absolute top-8 right-8 text-black hover:text-gray-700 text-2xl font-light cursor-pointer transition-colors"
+                        >
+                            ✕
+                        </button>
+
+                        <h2 className="text-3xl font-medium tracking-tight text-black mb-10">
+                            Avaliações sobre a {primeiroNomeProfissional}
+                        </h2>
+
+                        {reviewsLoading ? (
+                            <div className="flex-1 flex items-center justify-center py-10">
+                                <span className="text-gray-500">Carregando avaliações...</span>
+                            </div>
+                        ) : reviews.length === 0 ? (
+                            <div className="flex-1 flex items-center justify-center py-10">
+                                <span className="text-gray-500">Nenhuma avaliação encontrada para este profissional.</span>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                {reviews.map((rev) => (
+                                    <div key={rev.id} className="bg-[#E4E4E4] rounded-2xl p-6 flex flex-col justify-between gap-4">
+                                        <div>
+                                            <div className="flex gap-1 mb-3 text-amber-400">
+                                                {"★".repeat(rev.rating)}{"☆".repeat(5 - rev.rating)}
+                                            </div>
+                                            <p className="text-[13px] leading-relaxed text-gray-500 font-medium line-clamp-4">
+                                                {rev.comment || "Lorem Ipsum is simply dummy text of the printing and typesetting industry."}
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                            </svg>
+                                            <span className="text-sm font-bold text-gray-600">Anônimo</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+
+
                     </div>
                 </div>
             )}

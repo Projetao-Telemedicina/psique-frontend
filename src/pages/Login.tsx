@@ -62,7 +62,7 @@ function Login() {
                                     id="email"
                                     value={email} // BIND STATE
                                     onChange={(e) => setEmail(e.target.value)} // UPDATE STATE
-                                    className="bg-input-bg rounded-xl w-full pl-12 pr-4 py-[min(1.5vh,1rem)] text-placeholder border border-transparent focus:border-navy outline-none transition-all"
+                                    className="bg-input-bg rounded-xl w-full pl-12 pr-4 py-[min(1.5vh,1rem)] text-black border border-transparent focus:border-navy outline-none transition-all"
                                     placeholder="Digite seu e-mail"
                                     required
                                 />
@@ -78,7 +78,7 @@ function Login() {
                                     id="password"
                                     value={password} // BIND STATE
                                     onChange={(e) => setPassword(e.target.value)} // UPDATE STATE
-                                    className="bg-input-bg rounded-xl w-full pl-12 pr-12 py-[min(1.5vh,1rem)] text-placeholder border border-transparent focus:border-navy outline-none transition-all"
+                                    className="bg-input-bg rounded-xl w-full pl-12 pr-12 py-[min(1.5vh,1rem)] text-black border border-transparent focus:border-navy outline-none transition-all"
                                     placeholder="Digite sua senha"
                                     required
                                 />
