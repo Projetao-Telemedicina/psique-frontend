@@ -48,13 +48,28 @@ interface ProfessionalProfile {
 }
 
 export default function TelaInicialProfissional() {
-  const [showMatchModal, setShowMatchModal] = useState(() => {
-    // Verifica se o profissional já fechou o modal nesta sessão/navegador
-    const jaViu = localStorage.getItem('matchModalVisualizado');
-    return jaViu !== 'true'; 
-});
   const { user, token } = useAuth();
   const navigate = useNavigate();
+  const [showMatchModal, setShowMatchModal] = useState(false);
+  useEffect(() => {
+    // Só verificamos se o usuário já estiver carregado
+    if (user?.id) {
+      const userKey = `matchModalVisualizado_${user.id}`;
+      const jaViu = localStorage.getItem(userKey);
+      
+      // Se não houver registro para este ID específico, mostramos o modal
+      if (jaViu !== 'true') {
+        setShowMatchModal(true);
+      }
+    }
+  }, [user]);
+
+  const handleCloseModal = (marcarComoVisto: boolean) => {
+    if (marcarComoVisto && user?.id) {
+      localStorage.setItem(`matchModalVisualizado_${user.id}`, 'true');
+    }
+    setShowMatchModal(false);
+  };
   
   const [currentDate, setCurrentDate] = useState("");
   const [profile, setProfile] = useState<ProfessionalProfile | null>(null);
@@ -163,13 +178,9 @@ export default function TelaInicialProfissional() {
       {/* Modal de Match */}
             <MatchModal 
                 isOpen={showMatchModal} 
-                onClose={() => {
-                  setShowMatchModal(false);
-                  localStorage.setItem('matchModalVisualizado', 'true');
-                }} 
+                onClose={() => (handleCloseModal(false))}
                 onStart={() => {
-                // Se ele clicar em responder, marcamos como visualizado também
-                  localStorage.setItem('matchModalVisualizado', 'true');
+                  handleCloseModal(true);
                   navigate('/match');
                 }}
                 role="PROFESSIONAL"
