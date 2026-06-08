@@ -39,9 +39,9 @@ export default function AppointmentHistoryCard({
           <p className="text-xs text-slate-400 mt-0.5 truncate">{histApp.professional?.specialty || "Psicologia"}</p>
 
           {histApp.status === 'CANCELED' && histApp.cancellationReason && (
-            <div className="mt-2 p-2 bg-red-50/70 border border-red-100 rounded-xl text-left">
+            <div className="mt-2 p-2 bg-red-50/70 border border-red-100 rounded-xl text-left min-w-0">
               <p className="text-[11px] font-bold text-red-700">Motivo do cancelamento:</p>
-              <p className="text-xs text-red-600 italic">"{histApp.cancellationReason}"</p>
+              <p className="text-xs text-red-600 italic break-words line-clamp-2">"{histApp.cancellationReason}"</p>
             </div>
           )}
         </div>
