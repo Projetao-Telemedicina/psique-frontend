@@ -351,7 +351,10 @@ export default function MarcarComProfissional() {
 
                     {/* Grade de Horários */}
                     <div className="mt-4">
-                        <h3 className="text-sm font-bold text-slate-600 mb-6">Próximos horários disponíveis</h3>
+                        <h3 className="text-sm font-bold text-slate-600 mb-1">Próximos horários disponíveis</h3>
+                        <p className="text-xs text-gray-400 mb-6">
+                            Para marcar uma consulta com este profissional, clique no horário que deseja e depois confirme.
+                        </p>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-10 pb-12">
                             {gradeHorarios.map((dia, idx) => (
