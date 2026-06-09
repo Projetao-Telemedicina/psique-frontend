@@ -6,7 +6,6 @@ import { EmergencyModal } from "../components/EmergencyModal";
 import { useAuth } from '../components/AuthContext';
 import { MatchModal } from "../components/MatchModal";
 import { AppointmentModal } from "../components/AppointmentModal";
-// 1. Importamos o hook do React Query
 import { useQuery } from '@tanstack/react-query';
 
 interface UserFormat {

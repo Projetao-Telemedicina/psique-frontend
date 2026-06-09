@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import EmergencyButton from '../components/EmergencyButton';
 import { EmergencyModal } from "../components/EmergencyModal";
 import { useAuth } from '../components/AuthContext';
+import { useQuery, useMutation } from '@tanstack/react-query';
 
 const DEFAULT_AVATAR = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
 
@@ -60,121 +61,120 @@ export default function MarcarComProfissional() {
     const { user, token } = useAuth();
     const [showEmergencyModal, setShowEmergencyModal] = useState(false);
 
-    const [prof, setProf] = useState<ProfessionalData | null>(null);
-    const [gradeHorarios, setGradeHorarios] = useState<DaySchedule[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [bookingLoading, setBookingLoading] = useState(false);
-
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedSlot, setSelectedSlot] = useState<{ date: string; time: string } | null>(null);
-
     const [isReviewsModalOpen, setIsReviewsModalOpen] = useState(false);
-    const [reviews, setReviews] = useState<ReviewData[]>([]);
-    const [reviewsLoading, setReviewsLoading] = useState(false);
 
     const HORARIOS_ATENDIMENTO = ['09:00', '10:00', '12:00', '14:00', '16:00', '17:00'];
+    const activeToken = token || localStorage.getItem('token');
 
-    useEffect(() => {
-        if (!id) return;
+    // --- QUERY PARA DETALHES DO PROFISSIONAL E GRADE DE HORÁRIOS ---
+    const { data: profData, isLoading: loading } = useQuery({
+        queryKey: ['professionalDetails', id, activeToken],
+        queryFn: async () => {
+            if (!id) throw new Error("ID do profissional não fornecido");
 
-        const carregarDadosReais = async () => {
-            const activeToken = token || localStorage.getItem('token');
             const headers: HeadersInit = activeToken ? {
                 'Authorization': `Bearer ${activeToken}`,
                 'Content-Type': 'application/json'
             } : { 'Content-Type': 'application/json' };
 
-            try {
-                const [resProf, resAppt] = await Promise.all([
-                    fetch(`/api/users/${id}`, { headers }),
-                    fetch(`/api/appointments/me/upcoming`, { headers })
-                ]);
+            const [resProf, resAppt] = await Promise.all([
+                fetch(`/api/users/${id}`, { headers }),
+                fetch(`/api/appointments/me/upcoming`, { headers })
+            ]);
 
-                if (!resProf.ok) throw new Error('Erro ao buscar profissional');
+            if (!resProf.ok) throw new Error('Erro ao buscar profissional');
 
-                const dataProf = await resProf.json();
-                const dataAppts: AppointmentData[] = resAppt.ok ? await resAppt.json() : [];
+            const dataProf = await resProf.json();
+            const dataAppts: AppointmentData[] = resAppt.ok ? await resAppt.json() : [];
+            const consultasDesteProfissional = dataAppts.filter(app => app.professionalId === id);
 
-                const consultasDesteProfissional = dataAppts.filter(app => app.professionalId === id);
+            const profFormatado: ProfessionalData = {
+                id: dataProf.id || id,
+                crp: dataProf.crp || "Registro não informado",
+                specialty: dataProf.specialty || "Psicologia",
+                scoreAvg: dataProf.scoreAvg || "0",
+                reviewCount: dataProf.reviewCount || 0,
+                sessionsCompleted: dataProf.sessionsCompleted || 0,
+                hoursAttended: dataProf.hoursAttended || 0,
+                clientsAttended: dataProf.clientsAttended || 0,
+                tags: dataProf.tags || [],
+                user: {
+                    name: dataProf.user?.name || dataProf.name || 'Profissional',
+                    bio: dataProf.user?.bio || dataProf.bio || "Nenhuma biografia disponível.",
+                    avatarUrl: dataProf.user?.avatarUrl || dataProf.avatarUrl || null,
+                }
+            };
 
-                const profFormatado: ProfessionalData = {
-                    id: dataProf.id || id,
-                    crp: dataProf.crp || "Registro não informado",
-                    specialty: dataProf.specialty || "Psicologia",
-                    scoreAvg: dataProf.scoreAvg || "0",
-                    reviewCount: dataProf.reviewCount || 0,
-                    sessionsCompleted: dataProf.sessionsCompleted || 0,
-                    hoursAttended: dataProf.hoursAttended || 0,
-                    clientsAttended: dataProf.clientsAttended || 0,
-                    tags: dataProf.tags || [],
-                    user: {
-                        name: dataProf.user?.name || dataProf.name || 'Profissional',
-                        bio: dataProf.user?.bio || dataProf.bio || "Nenhuma biografia disponível.",
-                        avatarUrl: dataProf.user?.avatarUrl || dataProf.avatarUrl || null,
-                    }
-                };
-                setProf(profFormatado);
+            // Geração da grade de horários movida para o QueryFn (Cacheável)
+            const agendamentosGerados: DaySchedule[] = [];
+            const hoje = new Date();
 
-                const agendamentosGerados: DaySchedule[] = [];
-                const hoje = new Date();
+            for (let i = 0; i < 6; i++) {
+                const dataCorrente = new Date(hoje);
+                dataCorrente.setDate(hoje.getDate() + i);
 
-                for (let i = 0; i < 6; i++) {
-                    const dataCorrente = new Date(hoje);
-                    dataCorrente.setDate(hoje.getDate() + i);
+                const diaStr = String(dataCorrente.getDate()).padStart(2, '0');
+                const mesStr = String(dataCorrente.getMonth() + 1).padStart(2, '0');
+                const anoStr = dataCorrente.getFullYear();
+                const dataFormatada = `${diaStr}/${mesStr}/${anoStr}`;
 
-                    const diaStr = String(dataCorrente.getDate()).padStart(2, '0');
-                    const mesStr = String(dataCorrente.getMonth() + 1).padStart(2, '0');
-                    const anoStr = dataCorrente.getFullYear();
-                    const dataFormatada = `${diaStr}/${mesStr}/${anoStr}`;
+                const slotsDia = HORARIOS_ATENDIMENTO.map(hora => {
+                    const [h, m] = hora.split(':');
+                    const dataDoSlot = new Date(dataCorrente.getFullYear(), dataCorrente.getMonth(), dataCorrente.getDate(), Number(h), Number(m));
+                    const jaPassou = dataDoSlot.getTime() < new Date().getTime();
 
-                    const slotsDia = HORARIOS_ATENDIMENTO.map(hora => {
-                        const [h, m] = hora.split(':');
-                        const dataDoSlot = new Date(dataCorrente.getFullYear(), dataCorrente.getMonth(), dataCorrente.getDate(), Number(h), Number(m));
-                        const jaPassou = dataDoSlot.getTime() < new Date().getTime();
-
-                        const horarioOcupado = consultasDesteProfissional.some(consulta => {
-                            const dataConsulta = new Date(consulta.startsAt);
-                            return dataConsulta.getTime() === dataDoSlot.getTime();
-                        });
-
-                        return {
-                            time: hora,
-                            status: (jaPassou || horarioOcupado) ? 'unavailable' : 'available' as 'unavailable' | 'available'
-                        };
+                    const horarioOcupado = consultasDesteProfissional.some(consulta => {
+                        const dataConsulta = new Date(consulta.startsAt);
+                        return dataConsulta.getTime() === dataDoSlot.getTime();
                     });
 
-                    agendamentosGerados.push({ date: dataFormatada, slots: slotsDia });
-                }
+                    return {
+                        time: hora,
+                        status: (jaPassou || horarioOcupado) ? 'unavailable' : 'available' as 'unavailable' | 'available'
+                    };
+                });
 
-                setGradeHorarios(agendamentosGerados);
-
-            } catch (err) {
-                console.error("Erro ao carregar dados:", err);
-            } finally {
-                setLoading(false);
+                agendamentosGerados.push({ date: dataFormatada, slots: slotsDia });
             }
-        };
 
-        carregarDadosReais();
-    }, [id, token]);
+            return { prof: profFormatado, gradeHorarios: agendamentosGerados };
+        },
+        enabled: !!id,
+    });
 
-    const handleAbrirConfirmacao = (dateStr: string, timeStr: string) => {
-        setSelectedSlot({ date: dateStr, time: timeStr });
-        setIsModalOpen(true);
-    };
+    const prof = profData?.prof;
+    const gradeHorarios = profData?.gradeHorarios || [];
 
-    const handleConfirmarAgendamento = async () => {
-        if (!prof || !selectedSlot || bookingLoading) return;
+    // --- QUERY PARA AS AVALIAÇÕES (LAZY LOADING) ---
+    const { data: reviews = [], isLoading: reviewsLoading } = useQuery({
+        queryKey: ['professionalReviews', id, activeToken],
+        queryFn: async () => {
+            const headers: HeadersInit = activeToken ? {
+                'Authorization': `Bearer ${activeToken}`,
+                'Content-Type': 'application/json'
+            } : { 'Content-Type': 'application/json' };
 
-        const [dia, mes, ano] = selectedSlot.date.split('/');
-        const [hora, min] = selectedSlot.time.split(':');
+            const res = await fetch(`/api/professionals/${id}/reviews?page=1&limit=10`, { headers });
+            if (!res.ok) throw new Error('Falha ao carregar as avaliações');
+            return res.json();
+        },
+        // Só executa a requisição se o modal de avaliações estiver aberto
+        enabled: isReviewsModalOpen && !!id,
+    });
 
-        const startsAtDate = new Date(Number(ano), Number(mes) - 1, Number(dia), Number(hora), Number(min));
-        const endsAtDate = new Date(startsAtDate.getTime() + 50 * 60000);
+    // --- MUTATION PARA CRIAR O AGENDAMENTO ---
+    const { mutate: confirmarAgendamento, isPending: bookingLoading } = useMutation({
+        mutationFn: async (slot: { date: string; time: string }) => {
+            if (!prof) return;
 
-        try {
-            setBookingLoading(true);
-            const activeToken = token || localStorage.getItem('token');
+            const [dia, mes, ano] = slot.date.split('/');
+            const [hora, min] = slot.time.split(':');
+
+            const startsAtDate = new Date(Number(ano), Number(mes) - 1, Number(dia), Number(hora), Number(min));
+            const endsAtDate = new Date(startsAtDate.getTime() + 50 * 60000);
+
             const patientId = user?.id || localStorage.getItem('userId');
 
             const payloadBody = {
@@ -195,48 +195,29 @@ export default function MarcarComProfissional() {
             });
 
             const data = await res.json();
-
-            if (res.ok) {
-                alert(data.message || 'Consulta agendada com sucesso!');
-                setIsModalOpen(false);
-                navigate('/paciente/home');
-            } else {
-                console.error('Erro real do backend:', data);
-                const errorMessage = Array.isArray(data.message) ? data.message.join(', ') : data.message;
-                alert(errorMessage || `Erro ${res.status}: Falha no servidor.`);
-            }
-        } catch (error) {
-            console.error("Erro de conexão/rede:", error);
-            alert('Erro de conexão com o servidor.');
-        } finally {
-            setBookingLoading(false);
+            if (!res.ok) throw data;
+            return data;
+        },
+        onSuccess: (data) => {
+            alert(data?.message || 'Consulta agendada com sucesso!');
+            setIsModalOpen(false);
+            navigate('/paciente/home');
+        },
+        onError: (error: any) => {
+            console.error('Erro no servidor:', error);
+            const errorMessage = Array.isArray(error?.message) ? error.message.join(', ') : error?.message;
+            alert(errorMessage || 'Falha no servidor ao agendar.');
         }
+    });
+
+    const handleAbrirConfirmacao = (dateStr: string, timeStr: string) => {
+        setSelectedSlot({ date: dateStr, time: timeStr });
+        setIsModalOpen(true);
     };
 
-    const handleAbrirAvaliacoes = async () => {
-        setIsReviewsModalOpen(true);
-        if (reviews.length > 0) return; // Evita buscar novamente se já carregou
-
-        setReviewsLoading(true);
-        try {
-            const activeToken = token || localStorage.getItem('token');
-            const headers: HeadersInit = activeToken ? {
-                'Authorization': `Bearer ${activeToken}`,
-                'Content-Type': 'application/json'
-            } : { 'Content-Type': 'application/json' };
-
-            const res = await fetch(`/api/professionals/${id}/reviews?page=1&limit=10`, { headers });
-
-            if (res.ok) {
-                const data = await res.json();
-                setReviews(data);
-            } else {
-                console.error('Falha ao carregar as avaliações');
-            }
-        } catch (error) {
-            console.error("Erro ao buscar avaliações:", error);
-        } finally {
-            setReviewsLoading(false);
+    const handleConfirmarAgendamento = () => {
+        if (selectedSlot) {
+            confirmarAgendamento(selectedSlot);
         }
     };
 
@@ -297,7 +278,7 @@ export default function MarcarComProfissional() {
                                 {renderStars(prof.scoreAvg)}
                             </div>
                             <p
-                                onClick={handleAbrirAvaliacoes}
+                                onClick={() => setIsReviewsModalOpen(true)}
                                 className="text-sm text-gray-400 font-medium cursor-pointer hover:text-slate-600 transition-colors inline-block"
                             >
                                 Ver avaliações &gt;
@@ -424,11 +405,10 @@ export default function MarcarComProfissional() {
                 </div>
             )}
 
+            {/* MODAL DE AVALIAÇÕES */}
             {isReviewsModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-xs p-4">
                     <div className="relative w-full max-w-4xl bg-[#EEEEEE] rounded-3xl p-10 max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
-
-                        {/* Botão de Fechar */}
                         <button
                             onClick={() => setIsReviewsModalOpen(false)}
                             className="absolute top-8 right-8 text-black hover:text-gray-700 text-2xl font-light cursor-pointer transition-colors"
@@ -470,9 +450,6 @@ export default function MarcarComProfissional() {
                                 ))}
                             </div>
                         )}
-
-
-
                     </div>
                 </div>
             )}

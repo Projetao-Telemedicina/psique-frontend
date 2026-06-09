@@ -12,7 +12,6 @@ import { EmergencyModal } from "../components/EmergencyModal";
 import ModalDeletarConta from '../components/ModalDeletarConta';
 import { CampoPerfil } from '../components/CampoPerfil';
 import { useAuth } from '../components/AuthContext';
-// 1. Importamos as ferramentas do React Query
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface UpdateUserPayload {
@@ -80,7 +79,7 @@ export default function VisualizarPerfilPaciente() {
   const userId = user?.id || localStorage.getItem('userId');
   const activeToken = token || localStorage.getItem('token');
 
-  // --- 2. QUERY: BUSCA DE DADOS ---
+  // --- QUERY: BUSCA DE DADOS ---
   const { isLoading, error } = useQuery({
     queryKey: ['patientProfile', userId],
     queryFn: async () => {
@@ -114,7 +113,7 @@ export default function VisualizarPerfilPaciente() {
     }
   }, [error]);
 
-  // --- 3. MUTATION: SALVAR ALTERAÇÕES ---
+  // --- MUTATION: SALVAR ALTERAÇÕES ---
   const updateProfileMutation = useMutation({
     mutationFn: async (payloads: { userPayload: UpdateUserPayload, patientPayload: UpdatePatientOnlyPayload }) => {
       const requisicoes = [
@@ -155,7 +154,7 @@ export default function VisualizarPerfilPaciente() {
     }
   });
 
-  // --- 4. MUTATION: EXCLUIR CONTA ---
+  // --- MUTATION: EXCLUIR CONTA ---
   const deleteAccountMutation = useMutation({
     mutationFn: async (senha: string) => {
       const response = await fetch(`/api/users/${dados?.userId}`, {

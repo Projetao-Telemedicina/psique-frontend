@@ -10,6 +10,7 @@ import Sidebar from '../components/Sidebar';
 import ModalDeletarConta from '../components/ModalDeletarConta';
 import { CampoPerfil } from '../components/CampoPerfil';
 import { useAuth } from '../components/AuthContext';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface UpdateUserPayload {
   name: string;
@@ -58,128 +59,58 @@ interface DadosProfissional {
 
 export default function VisualizarPerfilProfissional() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user, token } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [dados, setDados] = useState<DadosProfissional | null>(null);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
   const TIPO_USUARIO = 'profissional';
+  const activeToken = token || localStorage.getItem('token');
+  const userId = user?.id || localStorage.getItem('userId');
 
-  useEffect(() => {
-    const carregarDadosProfissional = async () => {
-      const userId = user?.id || localStorage.getItem('userId');
-      const activeToken = token || localStorage.getItem('token');
+  // --- QUERY: BUSCA DE DADOS DO PROFISSIONAL ---
+  const { data: professionalProfile, isLoading } = useQuery({
+    queryKey: ['professionalProfile', userId],
+    queryFn: async () => {
+      if (!activeToken || !userId) throw new Error("Não autenticado");
       
-      if (!activeToken || !userId) {
-        console.error("Token de autenticação ou ID do usuário não encontrados.");
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const response = await fetch(`/api/professionals/${userId}`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${activeToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setDados(data);
-        } else {
-          console.error(`Erro ao buscar dados do profissional (${response.status})`);
-          toast.error("Erro ao carregar dados do perfil.");
-          if (response.status === 401 || response.status === 403) {
-            navigate('/login');
-          }
+      const response = await fetch(`/api/professionals/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${activeToken}`,
+          'Content-Type': 'application/json'
         }
-      } catch (err) {
-        console.error("Erro de rede ao conectar com a API:", err);
-        toast.error("Erro de conexão ao carregar as informações.");
-      } finally {
-        setLoading(false);
+      });
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          navigate('/login');
+        }
+        throw new Error(`Erro ao buscar dados (${response.status})`);
       }
-    };
+      return response.json() as Promise<DadosProfissional>;
+    },
+    enabled: !!activeToken && !!userId,
+  });
 
-    carregarDadosProfissional();
-  }, [token, user, navigate]);
-
-  const validarCampos = (): boolean => {
-    if (!dados) return false;
-    const { cep, city, state, number } = dados.user;
-
-    // 1. Validação do CEP (Apenas números e exatamente 8 dígitos após a limpeza)
-    const cepLimpo = String(cep || "").replace(/\D/g, "");
-    if (cepLimpo.length !== 8) {
-      toast.error("O campo CEP deve conter exatamente 8 números válidos.");
-      return false;
+  // Sincroniza o estado local editável sempre que a query carregar ou resetar
+  useEffect(() => {
+    if (professionalProfile) {
+      setDados(professionalProfile);
     }
+  }, [professionalProfile]);
 
-    // 2. Validação de Cidade (Não pode aceitar números)
-    const regexCidade = /^[A-Za-zÀ-ÿçÇ__]+$/;
-    if (!regexCidade.test(city.trim())) {
-      toast.error("O campo Cidade deve conter apenas caracteres alfabéticos.");
-      return false;
-    }
-
-    // 3. Validação de Estado (Apenas letras, sem emojis, caracteres especiais ou números - Idealmente UF com 2 letras)
-    const stateTrimmed = state.trim();
-    const regexEstado = /^[A-Za-zÀ-ÿ\s]{2,}$/; // Mínimo de 2 letras (aceita tanto "PE" quanto "Pernambuco")
-    if (!regexEstado.test(stateTrimmed)) {
-      toast.error("O campo Estado inválido. Use apenas caracteres alfabéticos (Ex: PE ou Pernambuco).");
-      return false;
-    }
-
-    // 4. Validação do Número (Deve conter pelo menos um dígito numérico ou aceitar variações padrão como "S/N")
-    // Impede textos puramente inválidos ou vazios cheios de lixo
-    const numberTrimmed = number.trim();
-    const regexNumero = /^[0-9]+[A-Za-z]?$|^[sS]\/[nN]$|^[sS]em\s[nN]úmero$/;
-    if (!regexNumero.test(numberTrimmed)) {
-      toast.error("O campo Número deve ser um valor numérico válido (ex: 123, 123B) ou 'S/N'.");
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleSalvar = async () => {
-    if (!dados) return;
-    if (!validarCampos()) return;
-    setSaving(true);
-    const activeToken = token || localStorage.getItem('token');
-    const targetUserId = dados.user.id || user?.id || localStorage.getItem('userId');
-    
-    try {
-      const userPayload: UpdateUserPayload = {
-        name: dados.user.name,
-        phone: String(dados.user.phone || "").replace(/\D/g, ""),
-        avatarUrl: dados.user.avatarUrl,
-        bio: dados.user.bio,
-        cep: String(dados.user.cep || "").replace(/\D/g, ""),
-        city: dados.user.city,
-        state: dados.user.state,
-        street: dados.user.street,
-        number: dados.user.number
-      };
-
-      const professionalPayload: UpdateProfessionalOnlyPayload = {
-        specialty: dados.specialty
-      };
-
-      if (newPassword.trim() !== '') {
-        professionalPayload.currentPassword = currentPassword;
-        professionalPayload.newPassword = newPassword;
-      }
-
+  // --- MUTATION: ATUALIZAÇÃO DO PERFIL (USER + PROFESSIONAL) ---
+  const updateProfileMutation = useMutation({
+    mutationFn: async ({ userPayload, professionalPayload }: { userPayload: UpdateUserPayload, professionalPayload: UpdateProfessionalOnlyPayload }) => {
+      const targetUserId = dados?.user.id || userId;
+      
       const requisicoes = [
         fetch(`/api/users/${targetUserId}`, {
           method: 'PATCH',
@@ -201,21 +132,83 @@ export default function VisualizarPerfilProfissional() {
 
       const [resUser, resProfessional] = await Promise.all(requisicoes);
 
-      if (resUser.ok && resProfessional.ok) {
-        setIsEditing(false);
-        setCurrentPassword('');
-        setNewPassword('');
-        toast.success("Perfil profissional atualizado com sucesso!");
-      } else {
-        const errorText = !resUser.ok ? "Erro ao atualizar dados cadastrais." : "Erro ao atualizar registro profissional.";
-        toast.error(errorText);
-      }
-    } catch (err) {
-      console.error("Erro ao salvar:", err);
-      toast.error("Erro de conexão ao salvar.");
-    } finally {
-      setSaving(false);
+      if (!resUser.ok) throw new Error("Erro ao atualizar dados cadastrais.");
+      if (!resProfessional.ok) throw new Error("Erro ao atualizar registro profissional.");
+      
+      return true;
+    },
+    onSuccess: () => {
+      // Invalida o cache para recarregar as informações atualizadas da API
+      queryClient.invalidateQueries({ queryKey: ['professionalProfile', userId] });
+      setIsEditing(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      toast.success("Perfil profissional updated com sucesso!");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Erro ao salvar alterações.");
     }
+  });
+
+  const validarCampos = (): boolean => {
+    if (!dados) return false;
+    const { cep, city, state, number } = dados.user;
+
+    const cepLimpo = String(cep || "").replace(/\D/g, "");
+    if (cepLimpo.length !== 8) {
+      toast.error("O campo CEP deve conter exatamente 8 números válidos.");
+      return false;
+    }
+
+    const regexCidade = /^[A-Za-zÀ-ÿçÇ\s__]+$/;
+    if (!regexCidade.test(city.trim())) {
+      toast.error("O campo Cidade deve conter apenas caracteres alfabéticos.");
+      return false;
+    }
+
+    const stateTrimmed = state.trim();
+    const regexEstado = /^[A-Za-zÀ-ÿ\s]{2,}$/;
+    if (!regexEstado.test(stateTrimmed)) {
+      toast.error("O campo Estado inválido. Use apenas caracteres alfabéticos (Ex: PE ou Pernambuco).");
+      return false;
+    }
+
+    const numberTrimmed = number.trim();
+    const regexNumero = /^[0-9]+[A-Za-z]?$|^[sS]\/[nN]$|^[sS]em\s[nN]úmero$/;
+    if (!regexNumero.test(numberTrimmed)) {
+      toast.error("O campo Número deve ser um valor numérico válido (ex: 123, 123B) ou 'S/N'.");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSalvar = () => {
+    if (!dados) return;
+    if (!validarCampos()) return;
+
+    const userPayload: UpdateUserPayload = {
+      name: dados.user.name,
+      phone: String(dados.user.phone || "").replace(/\D/g, ""),
+      avatarUrl: dados.user.avatarUrl,
+      bio: dados.user.bio,
+      cep: String(dados.user.cep || "").replace(/\D/g, ""),
+      city: dados.user.city,
+      state: dados.user.state,
+      street: dados.user.street,
+      number: dados.user.number
+    };
+
+    const professionalPayload: UpdateProfessionalOnlyPayload = {
+      specialty: dados.specialty
+    };
+
+    if (newPassword.trim() !== '') {
+      professionalPayload.currentPassword = currentPassword;
+      professionalPayload.newPassword = newPassword;
+    }
+
+    updateProfileMutation.mutate({ userPayload, professionalPayload });
   };
 
   const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -233,8 +226,7 @@ export default function VisualizarPerfilProfissional() {
   };
 
   const handleDeleteConfirm = async (senha: string) => {
-    const activeToken = token || localStorage.getItem('token');
-    const targetUserId = dados?.user.id || user?.id || localStorage.getItem('userId');
+    const targetUserId = dados?.user.id || userId;
     const response = await fetch(`/api/users/${targetUserId}`, {
       method: 'DELETE',
       headers: {
@@ -267,9 +259,7 @@ export default function VisualizarPerfilProfissional() {
     { label: 'Prefiro não informar', value: 'prefiro_nao_informar' },
   ];
 
-  const estrelasCalculadas = Math.round(Number(dados?.scoreAvg || 0));
-
-  if (loading) return (
+  if (isLoading) return (
     <div className="h-screen w-full flex items-center justify-center bg-white">
       <Loader2 className="animate-spin text-teal-600" size={40} />
     </div>
@@ -283,6 +273,8 @@ export default function VisualizarPerfilProfissional() {
       </button>
     </div>
   );
+
+  const estrelasCalculadas = Math.round(Number(dados.scoreAvg || 0));
 
   return (
     <main className="flex h-screen w-full overflow-hidden bg-[#F8FAFC]">
@@ -342,7 +334,7 @@ export default function VisualizarPerfilProfissional() {
 
                   {!isEditing && (
                     <div className="flex flex-col items-center gap-2 text-center w-[240px]">
-                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest w-full">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest w-full">
                         Quer ajustar seu público?
                       </span>
                       <button 
@@ -377,8 +369,8 @@ export default function VisualizarPerfilProfissional() {
                     <CampoPerfil label="Especialidade" valor={dados.specialty} isEditing={isEditing} onChange={(v) => setDados({...dados, specialty: v})} />
                     
                     <div className="col-span-2 mt-4 flex items-center gap-2">
-                       <MapPin size={14} className="text-slate-400" />
-                       <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Localização</h3>
+                      <MapPin size={14} className="text-slate-400" />
+                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Localização</h3>
                     </div>
                     <CampoPerfil label="CEP" valor={dados.user.cep} isEditing={isEditing} onChange={(v) => setDados({...dados, user: {...dados.user, cep: v}})} />
                     <CampoPerfil label="Cidade" valor={dados.user.city} isEditing={isEditing} onChange={(v) => setDados({...dados, user: {...dados.user, city: v}})} />
@@ -413,11 +405,23 @@ export default function VisualizarPerfilProfissional() {
                 <div className="flex gap-4 mt-10 border-t border-slate-50 pt-8">
                   {isEditing ? (
                     <>
-                      <button onClick={() => { setIsEditing(false); setCurrentPassword(''); setNewPassword(''); }} className="flex-1 py-3 bg-white border border-slate-200 text-slate-600 font-bold text-sm rounded-full hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+                      <button 
+                        onClick={() => { 
+                          setIsEditing(false); 
+                          setCurrentPassword(''); 
+                          setNewPassword(''); 
+                          if (professionalProfile) setDados(professionalProfile); // Restaura dados originais do cache
+                        }} 
+                        className="flex-1 py-3 bg-white border border-slate-200 text-slate-600 font-bold text-sm rounded-full hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                      >
                         <X size={16} /> Cancelar
                       </button>
-                      <button onClick={handleSalvar} className="flex-1 py-3 bg-teal-600 text-white font-bold text-sm rounded-full hover:bg-teal-700 transition-all shadow-md flex items-center justify-center gap-2">
-                        {saving ? <Loader2 className="animate-spin" size={16} /> : <><Save size={16} /> Salvar Alterações</>}
+                      <button 
+                        onClick={handleSalvar} 
+                        disabled={updateProfileMutation.isPending}
+                        className="flex-1 py-3 bg-teal-600 text-white font-bold text-sm rounded-full hover:bg-teal-700 transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {updateProfileMutation.isPending ? <Loader2 className="animate-spin" size={16} /> : <><Save size={16} /> Salvar Alterações</>}
                       </button>
                     </>
                   ) : (
@@ -442,7 +446,7 @@ export default function VisualizarPerfilProfissional() {
                   <p className="text-3xl font-black">R$ 29<span className="text-sm font-normal">/mês</span></p>
                 </div>
                 <div className="flex flex-col gap-2">
-                   <button className="w-full py-3 bg-emerald-500 text-white font-bold text-xs rounded-xl hover:bg-emerald-600 transition-colors">
+                  <button className="w-full py-3 bg-emerald-500 text-white font-bold text-xs rounded-xl hover:bg-emerald-600 transition-colors">
                     Ativar Destaque
                   </button>
                   <button className="w-full py-3 bg-white border border-slate-200 text-slate-600 font-bold text-xs rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">

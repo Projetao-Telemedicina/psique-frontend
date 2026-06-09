@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Sidebar from "../components/Sidebar";
 import { ChevronLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import EmergencyButton from "../components/EmergencyButton";
 import { EmergencyModal } from "../components/EmergencyModal";
 import { useAuth } from "../components/AuthContext";
+import { useQuery } from "@tanstack/react-query";
 
 interface RecommendationFormat {
     professionalId: string;
@@ -34,7 +35,6 @@ function LinhaProfissional({ prof, renderStars, defaultAvatar }: {
             to={`/paciente/profissional/${prof.professionalId}`}
             className="flex flex-col gap-3 p-4 rounded-2xl transition-all duration-200 border border-gray-100 hover:bg-slate-50 hover:shadow-md cursor-pointer group bg-white"
         >
-            {/* Bloco Superior: Imagem, Nome, Estrelas e Tags */}
             <div className="flex gap-4 items-start">
                 <img
                     src={prof.avatarUrl || defaultAvatar}
@@ -42,16 +42,13 @@ function LinhaProfissional({ prof, renderStars, defaultAvatar }: {
                     className="w-20 h-20 rounded-2xl object-cover shrink-0 shadow-sm border border-gray-100"
                 />
 
-                {/* Conteúdo à direita da foto */}
                 <div className="flex flex-col gap-1.5 w-full min-w-0">
-                    {/* Nome + Estrelas */}
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                         <h3 className="font-bold text-lg text-slate-800 group-hover:text-blue-600 transition-colors truncate max-w-[160px]">
                             {prof.professionalName}
                         </h3>
                         {renderStars(prof.scoreAvg)}
                     </div>
-
 
                     <div className="flex flex-wrap gap-1.5">
                         {tagsExplicacao.slice(0, 6).map((tag, index) => (
@@ -67,7 +64,6 @@ function LinhaProfissional({ prof, renderStars, defaultAvatar }: {
                 </div>
             </div>
 
-            {/* Descrição / Especialidade */}
             <p className="text-xs text-gray-500 leading-relaxed font-normal line-clamp-3">
                 {prof.specialty || "Profissional altamente recomendado com base no seu perfil."}
             </p>
@@ -76,42 +72,35 @@ function LinhaProfissional({ prof, renderStars, defaultAvatar }: {
 }
 
 function CompatibilidadeComProfissionais() {
-    const { user, token } = useAuth();
+    const { token } = useAuth();
     const [showEmergencyModal, setShowEmergencyModal] = useState(false);
-
-    const [profissionais, setProfissionais] = useState<RecommendationFormat[]>([]);
-    const [loading, setLoading] = useState(true);
 
     const TIPO_USUARIO = "paciente";
     const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150";
 
-    useEffect(() => {
-        const carregarProfissionaisCompativeis = async () => {
-            const activeToken = token || localStorage.getItem("token");
-            if (!activeToken) return;
+    // Recupera o token ativo para controle de dependência da Query
+    const activeToken = token || localStorage.getItem("token");
 
-            try {
-                setLoading(true);
-                const headers = { Authorization: `Bearer ${activeToken}` };
+    // --- QUERY: BUSCA DAS RECOMENDAÇÕES DE MATCHING ---
+    const { data: profissionais = [], isLoading } = useQuery({
+        // Incluir o token na queryKey garante que, se o usuário deslogar/mudar, os dados resetem
+        queryKey: ['recommendations', activeToken],
+        queryFn: async () => {
+            if (!activeToken) throw new Error("Usuário não autenticado");
 
-                const resMatch = await fetch("/api/matching/recommendations", { headers });
-                
-                if (resMatch.ok) {
-                    const matchData = await resMatch.json();
-                    setProfissionais(matchData.recommendations || []);
-                } else {
-                    console.error("Erro ao buscar recomendações:", await resMatch.text());
-                }
-
-            } catch (error) {
-                console.error("Erro ao carregar profissionais compatíveis:", error);
-            } finally {
-                setLoading(false);
+            const headers = { Authorization: `Bearer ${activeToken}` };
+            const resMatch = await fetch("/api/matching/recommendations", { headers });
+            
+            if (!resMatch.ok) {
+                throw new Error("Erro ao buscar recomendações");
             }
-        };
 
-        carregarProfissionaisCompativeis();
-    }, [user, token]);
+            const matchData = await resMatch.json();
+            return matchData.recommendations || [];
+        },
+        // A query só executa se houver um token ativo disponível
+        enabled: !!activeToken,
+    });
 
     const renderStarsFromScore = (scoreStr: string | number) => {
         const score = Math.round(typeof scoreStr === 'string' ? parseFloat(scoreStr || "5") : scoreStr);
@@ -163,7 +152,8 @@ function CompatibilidadeComProfissionais() {
                     </h1>
                 </header>
 
-                {loading ? (
+                {/* 3. Renderização condicional simplificada pelas flags da Query */}
+                {isLoading ? (
                     <div className="flex-1 flex items-center justify-center text-gray-400">
                         Buscando os melhores profissionais para você...
                     </div>

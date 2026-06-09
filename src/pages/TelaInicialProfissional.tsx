@@ -13,7 +13,6 @@ import {
   Loader2
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-// 1. Importamos o hook useQuery
 import { useQuery } from '@tanstack/react-query';
 
 interface PatientUser {
@@ -99,7 +98,7 @@ export default function TelaInicialProfissional() {
     enabled: !!token && !!user?.id,
   });
 
-  // --- 3. QUERY: CONSULTAS AGENDADAS ---
+  // --- QUERY: CONSULTAS AGENDADAS ---
   const { data: upcomingAppointments = [], isLoading } = useQuery({
     queryKey: ['upcomingAppointments', user?.id],
     queryFn: async () => {
@@ -115,7 +114,7 @@ export default function TelaInicialProfissional() {
     enabled: !!token && !!user?.id,
   });
 
-  // --- 4. ESTADOS DERIVADOS (CÁLCULOS EM TEMPO DE EXECUÇÃO) ---
+  // --- ESTADOS DERIVADOS (CÁLCULOS EM TEMPO DE EXECUÇÃO) ---
   const uniquePatients = new Set(upcomingAppointments.map(app => app.patientId));
   const activePatientsCount = uniquePatients.size;
 

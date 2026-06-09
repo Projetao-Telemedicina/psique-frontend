@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Sidebar from "../components/Sidebar";
 import { ChevronLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import EmergencyButton from "../components/EmergencyButton";
 import { EmergencyModal } from "../components/EmergencyModal";
 import { useAuth } from "../components/AuthContext";
+import { useQuery } from "@tanstack/react-query";
 
 interface UserFormat {
     id: string;
@@ -43,13 +44,12 @@ function CardProfissional({ prof, renderStars, defaultAvatar }: {
 
     return (
         <Link
-            to={`/paciente/perfil_do_profissional/${prof.userId}`} // Altere a rota aqui conforme a estrutura do seu projeto
+            to={`/paciente/perfil_do_profissional/${prof.userId}`}
             className="bg-[#EFEFEF] rounded-[32px] p-8 shadow-xl max-w-[420px] w-full flex flex-col items-center text-center border border-gray-100/50 
                        transition-all duration-300 ease-in-out 
                        hover:transform hover:-translate-y-2 hover:shadow-2xl hover:bg-[#EAEAEA]
                        cursor-pointer block text-left"
         >
-            {/* Foto de Perfil*/}
             <div className="relative w-28 h-28 mb-5 mx-auto">
                 <img
                     src={prof.user.avatarUrl || defaultAvatar}
@@ -58,7 +58,6 @@ function CardProfissional({ prof, renderStars, defaultAvatar }: {
                 />
             </div>
 
-            {/* Nome e Estrelas */}
             <div className="w-full flex items-center justify-between px-2 mb-4">
                 <h3 className="font-bold text-xl text-[#2D3748] tracking-tight truncate max-w-[60%]">
                     {prof.user.name}
@@ -68,7 +67,6 @@ function CardProfissional({ prof, renderStars, defaultAvatar }: {
                 </div>
             </div>
 
-            {/* Grid de Tags */}
             <div className="grid grid-cols-3 gap-2 w-full mb-6">
                 {tagsExemplo.slice(0, 6).map((tag, index) => (
                     <span
@@ -80,66 +78,59 @@ function CardProfissional({ prof, renderStars, defaultAvatar }: {
                 ))}
             </div>
 
-            {/* Biografia */}
             <p className="text-sm text-[#5A6A85] leading-relaxed w-full line-clamp-4 font-normal">
                 {prof.user.bio}
             </p>
         </Link>
     );
 }
-function ProfissionaisEmDestaque() {
-    const { user, token } = useAuth();
-    const [showEmergencyModal, setShowEmergencyModal] = useState(false);
 
-    const [profissionais, setProfissionais] = useState<ProfessionalFormat[]>([]);
-    const [loading, setLoading] = useState(true);
+function ProfissionaisEmDestaque() {
+    const { token } = useAuth();
+    const [showEmergencyModal, setShowEmergencyModal] = useState(false);
 
     const TIPO_USUARIO = "paciente";
     const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150";
 
-    useEffect(() => {
-        const carregarProfissionais = async () => {
-            const activeToken = token || localStorage.getItem("token");
-            if (!activeToken) return;
+    const activeToken = token || localStorage.getItem("token");
 
-            try {
-                setLoading(true);
-                const headers = { Authorization: `Bearer ${activeToken}` };
+    // --- QUERY: SUBSTITUI O USEEFFECT E OS ESTADOS MANUAIS ---
+    const { data: profissionais = [], isLoading } = useQuery({
+        queryKey: ['profissionaisDestaque', activeToken],
+        queryFn: async () => {
+            if (!activeToken) throw new Error("Usuário não autenticado");
 
-                const resUsersList = await fetch("/api/users?status=ACTIVE", { headers });
-                if (resUsersList.ok) {
-                    const listaGeral: ListaGeralItem[] = await resUsersList.json();
+            const headers = { Authorization: `Bearer ${activeToken}` };
+            const resUsersList = await fetch("/api/users?status=ACTIVE", { headers });
 
-                    const apenasProfs = listaGeral.filter(
-                        (u) => u.role === "PROFESSIONAL" || u.user?.role === "PROFESSIONAL"
-                    );
-
-                    const dadosFormatados: ProfessionalFormat[] = apenasProfs.map((p) => ({
-                        userId: p.userId || p.id || "",
-                        crp: p.crp || "06/000000",
-                        specialty: p.specialty || "Psicologia Clínica",
-                        scoreAvg: p.scoreAvg || "5.00",
-                        reviewCount: p.reviewCount || 0,
-                        user: {
-                            name: p.user?.name || p.name || "Profissional",
-                            email: p.user?.email || p.email || "",
-                            bio: p.user?.bio || p.bio || "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.",
-                            avatarUrl: p.user?.avatarUrl || p.avatarUrl || null,
-                            role: "PROFESSIONAL",
-                        },
-                    }));
-
-                    setProfissionais(dadosFormatados);
-                }
-            } catch (error) {
-                console.error("Erro ao carregar profissionais:", error);
-            } finally {
-                setLoading(false);
+            if (!resUsersList.ok) {
+                throw new Error("Erro ao buscar a lista de usuários");
             }
-        };
 
-        carregarProfissionais();
-    }, [user, token]);
+            const listaGeral: ListaGeralItem[] = await resUsersList.json();
+
+            // Isolamos a lógica de transformação e filtragem aqui dentro
+            const apenasProfs = listaGeral.filter(
+                (u) => u.role === "PROFESSIONAL" || u.user?.role === "PROFESSIONAL"
+            );
+
+            return apenasProfs.map((p) => ({
+                userId: p.userId || p.id || "",
+                crp: p.crp || "06/000000",
+                specialty: p.specialty || "Psicologia Clínica",
+                scoreAvg: p.scoreAvg || "5.00",
+                reviewCount: p.reviewCount || 0,
+                user: {
+                    name: p.user?.name || p.name || "Profissional",
+                    email: p.user?.email || p.email || "",
+                    bio: p.user?.bio || p.bio || "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.",
+                    avatarUrl: p.user?.avatarUrl || p.avatarUrl || null,
+                    role: "PROFESSIONAL",
+                },
+            }));
+        },
+        enabled: !!activeToken,
+    });
 
     const renderStarsFromScore = (scoreStr: string) => {
         const score = Math.round(parseFloat(scoreStr || "5"));
@@ -191,7 +182,8 @@ function ProfissionaisEmDestaque() {
                     </h1>
                 </header>
 
-                {loading ? (
+                {/* 3. Renderização Condicional Limpa */}
+                {isLoading ? (
                     <div className="flex-1 flex items-center justify-center text-gray-400">
                         Carregando lista de profissionais...
                     </div>

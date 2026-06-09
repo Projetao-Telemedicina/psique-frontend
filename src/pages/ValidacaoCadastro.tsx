@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Search, Bell, Eye, Check, X, FileText, Loader2, User } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Sidebar from '../components/Sidebar.tsx';
 
 interface ValidationRequest {
@@ -17,54 +18,36 @@ interface ValidationRequest {
 }
 
 function ValidacaoCadastro() {
-    const [solicitacoes, setSolicitacoes] = useState<ValidationRequest[]>([]);
-    const [selectedRequest, setSelectedRequest] = useState<ValidationRequest | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [actionLoading, setActionLoading] = useState(false);
+    const queryClient = useQueryClient();
+    
+    // Armazenamos apenas o ID selecionado. O objeto completo será derivado abaixo.
+    const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
 
-
-    const loadRequests = useCallback(async () => {
-        try {
-            setLoading(true);
+    // --- QUERY: BUSCA DAS SOLICITAÇÕES PENDENTES ---
+    const { data: solicitacoes = [], isLoading } = useQuery({
+        queryKey: ['validationRequests'],
+        queryFn: async () => {
             const token = localStorage.getItem('token');
             const response = await fetch('/api/admin/professionals/validation-requests', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
-            if (response.ok) {
-                const data: ValidationRequest[] = await response.json();
-                const pendentes = data.filter(req => req.status === 'PENDING');
-
-                setSolicitacoes(pendentes);
-
-
-                setSelectedRequest(prev => {
-
-                    if (prev && pendentes.find(r => r.id === prev.id)) {
-                        return prev;
-                    }
-                    return pendentes.length > 0 ? pendentes[0] : null;
-                });
+            if (!response.ok) {
+                throw new Error('Erro ao carregar validações');
             }
-        } catch (error) {
-            console.error("Erro ao carregar validações", error);
-        } finally {
-            setLoading(false);
+
+            const data: ValidationRequest[] = await response.json();
+            // Retorna apenas as requisições com status PENDING
+            return data.filter(req => req.status === 'PENDING');
         }
-    }, []); 
+    });
 
+    // Lógica derivada: Encontra o request selecionado atual ou assume o primeiro da fila por padrão
+    const selectedRequest = solicitacoes.find(r => r.id === selectedRequestId) || solicitacoes[0] || null;
 
-
-    useEffect(() => {
-        loadRequests();
-    }, [loadRequests]);
-
-
-
-    const handleApprove = async (id: string) => {
-        if (!confirm("Deseja aprovar este profissional?")) return;
-        try {
-            setActionLoading(true);
+    // --- MUTATION: APROVAR PROFISSIONAL ---
+    const approveMutation = useMutation({
+        mutationFn: async (id: string) => {
             const token = localStorage.getItem('token');
             const response = await fetch(`/api/admin/professionals/validation-requests/${id}/approve`, {
                 method: 'PATCH',
@@ -75,27 +58,25 @@ function ValidacaoCadastro() {
                 body: JSON.stringify({})
             });
 
-            if (response.ok) {
-                alert("Profissional aprovado!");
-                loadRequests();
-            } else {
+            if (!response.ok) {
                 const error = await response.json();
-                alert(`Erro ao aprovar: ${error.message || 'Erro desconhecido'}`);
+                throw new Error(error.message || 'Erro desconhecido');
             }
-        } catch (error) {
-            console.error("Erro detalhado do registro:", error);
-            alert("Erro na conexão com o servidor.");
-
-        } finally {
-            setActionLoading(false);
+            return id;
+        },
+        onSuccess: () => {
+            alert("Profissional aprovado!");
+            // Invalida o cache para recarregar a lista atualizada
+            queryClient.invalidateQueries({ queryKey: ['validationRequests'] });
+        },
+        onError: (error: any) => {
+            alert(`Erro ao aprovar: ${error.message}`);
         }
-    };
+    });
 
-    const handleReject = async (id: string) => {
-        const reason = prompt("Motivo da rejeição:");
-        if (!reason) return;
-        try {
-            setActionLoading(true);
+    // --- MUTATION: REJEITAR PROFISSIONAL ---
+    const rejectMutation = useMutation({
+        mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
             const token = localStorage.getItem('token');
             const response = await fetch(`/api/admin/professionals/validation-requests/${id}/reject`, {
                 method: 'PATCH',
@@ -105,16 +86,32 @@ function ValidacaoCadastro() {
                 },
                 body: JSON.stringify({ rejectionReason: reason })
             });
-            if (response.ok) {
-                alert("Cadastro rejeitado.");
-                loadRequests();
-            }
-        } catch (error) {
+
+            if (!response.ok) throw new Error("Erro ao rejeitar.");
+            return id;
+        },
+        onSuccess: () => {
+            alert("Cadastro rejeitado.");
+            queryClient.invalidateQueries({ queryKey: ['validationRequests'] });
+        },
+        onError: (error: any) => {
             console.error("Erro detalhado do registro:", error);
-            alert("Erro ao rejeitar.");
-        } finally {
-            setActionLoading(false);
+            alert("Erro ao rejeitar ou na conexão com o servidor.");
         }
+    });
+
+    // Unifica os estados de carregamento das ações de alteração
+    const actionLoading = approveMutation.isPending || rejectMutation.isPending;
+
+    const handleApprove = (id: string) => {
+        if (!confirm("Deseja aprovar este profissional?")) return;
+        approveMutation.mutate(id);
+    };
+
+    const handleReject = (id: string) => {
+        const reason = prompt("Motivo da rejeição:");
+        if (!reason) return;
+        rejectMutation.mutate({ id, reason });
     };
 
     return (
@@ -149,15 +146,20 @@ function ValidacaoCadastro() {
                         </div>
 
                         <div className="flex-1 overflow-y-auto pr-2 flex flex-col gap-3 custom-scrollbar">
-                            {loading ? (
-                                <div className="flex justify-center p-10"><Loader2 className="animate-spin text-sky" /></div>
+                            {isLoading ? (
+                                <div className="flex justify-center p-10">
+                                    <Loader2 className="animate-spin text-sky" />
+                                </div>
                             ) : (
                                 solicitacoes.map((s) => (
                                     <div
                                         key={s.id}
-                                        onClick={() => setSelectedRequest(s)}
-                                        className={`p-4 rounded-2xl border-2 transition-all cursor-pointer ${selectedRequest?.id === s.id ? 'bg-white border-sky shadow-md' : 'bg-white border-transparent opacity-70 hover:opacity-100'
-                                            }`}
+                                        onClick={() => setSelectedRequestId(s.id)}
+                                        className={`p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                                            selectedRequest?.id === s.id 
+                                                ? 'bg-white border-sky shadow-md' 
+                                                : 'bg-white border-transparent opacity-70 hover:opacity-100'
+                                        }`}
                                     >
                                         <div className="flex gap-3 items-center mb-3">
                                             <div className="w-12 h-12 rounded-lg bg-slate-200 flex items-center justify-center text-slate-400">
@@ -188,7 +190,7 @@ function ValidacaoCadastro() {
                                         </div>
                                         <div>
                                             <h2 className="text-2xl font-bold text-slate-800 leading-tight">{selectedRequest.professional.user.name}</h2>
-                                            <p className="text-sky font-medium text-sm">Candidato a Psicólogo Clínica</p>
+                                            <p className="text-sky font-medium text-sm">Candidato a Psicólogo Clínico</p>
                                         </div>
                                     </div>
                                     <div className="text-right">
@@ -223,7 +225,8 @@ function ValidacaoCadastro() {
                                         disabled={actionLoading}
                                         className="flex-1 max-w-[180px] py-2 border-2 border-red-500 text-red-500 font-bold text-xs rounded-full hover:bg-red-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                                     >
-                                        <X size={14} /> Rejeitar Cadastro
+                                        {rejectMutation.isPending ? <Loader2 className="animate-spin" size={14} /> : <X size={14} />} 
+                                        Rejeitar Cadastro
                                     </button>
 
                                     <div className="flex gap-2 flex-1 justify-end">
@@ -235,7 +238,7 @@ function ValidacaoCadastro() {
                                             disabled={actionLoading}
                                             className="px-5 py-2 bg-[#34D399] text-white font-bold text-xs rounded-full hover:bg-emerald-500 shadow-sm flex items-center gap-2 disabled:opacity-50"
                                         >
-                                            {actionLoading ? <Loader2 className="animate-spin" size={14} /> : <Check size={14} />}
+                                            {approveMutation.isPending ? <Loader2 className="animate-spin" size={14} /> : <Check size={14} />}
                                             Aprovar Profissional
                                         </button>
                                     </div>

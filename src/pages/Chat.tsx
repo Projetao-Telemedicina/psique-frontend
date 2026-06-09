@@ -5,7 +5,6 @@ import { EmergencyModal } from "../components/EmergencyModal";
 import { useAuth } from '../components/AuthContext';
 import { Send, Paperclip, Search, MessageSquare, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-// 1. Importamos as ferramentas do React Query
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface ChatRoom {
@@ -32,7 +31,7 @@ export default function Chat() {
 
   const activeToken = token || localStorage.getItem('token');
 
-  // --- 2. QUERY: LISTA DE CONVERSAS (CONTATOS) ---
+  // --- QUERY: LISTA DE CONVERSAS (CONTATOS) ---
   const { data: chatRooms = [], isLoading: isLoadingChats } = useQuery({
     queryKey: ['chatRooms', user?.id],
     queryFn: async () => {
@@ -46,7 +45,7 @@ export default function Chat() {
     enabled: !!activeToken && !!user?.id,
   });
 
-  // --- 3. QUERY: HISTÓRICO DE MENSAGENS (CONDICIONAL) ---
+  // --- QUERY: HISTÓRICO DE MENSAGENS (CONDICIONAL) ---
   const { data: messages = [], isLoading: isLoadingMessages } = useQuery({
     queryKey: ['messages', selectedChat],
     queryFn: async () => {
@@ -63,7 +62,7 @@ export default function Chat() {
     refetchInterval: 5000, 
   });
 
-  // --- 4. MUTATION: ENVIAR MENSAGEM ---
+  // --- MUTATION: ENVIAR MENSAGEM ---
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
       if (!selectedChat || !activeToken) return;
