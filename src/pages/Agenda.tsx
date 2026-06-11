@@ -11,7 +11,7 @@ import { useAuth } from '../components/AuthContext';
 import AppointmentHistoryCard from '../components/AppointmentHistoryCard';
 import AppointmentSidebarDetails from '../components/AppointmentSidebarDetails';
 import ReviewModal from '../components/ReviewModal';
-import { GerenciarHorariosModal } from '../components/GerenciarHorariosModal';
+import { ListaDeDisponibilidades } from '../components/ListaDeDisponibilidades';
 
 export interface Appointment {
   id: string;
@@ -282,7 +282,7 @@ export default function Agenda() {
       </section>
 
       {/* Modal de Gerenciamento de Agenda */}
-      <GerenciarHorariosModal
+      <ListaDeDisponibilidades
         isOpen={isGerenciarAgendaOpen}
         onClose={() => setIsGerenciarAgendaOpen(false)}
       />
