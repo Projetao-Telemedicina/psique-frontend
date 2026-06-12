@@ -3,6 +3,7 @@ import Sidebar from "../components/Sidebar";
 import { ChevronLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import EmergencyButton from "../components/EmergencyButton";
+import { EmergencyModal } from "../components/EmergencyModal"; // Importação do Modal adicionada (ajuste o caminho se necessário)
 import { useAuth } from "../components/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 
@@ -71,21 +72,17 @@ function LinhaProfissional({ prof, renderStars, defaultAvatar }: {
 }
 
 function CompatibilidadeComProfissionais() {
-
     const [showEmergencyModal, setShowEmergencyModal] = useState(false);
     const navigate = useNavigate();
     const { user, token } = useAuth();
 
-
     const TIPO_USUARIO = "paciente";
     const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150";
 
-    // Recupera o token ativo para controle de dependência da Query
     const activeToken = token || localStorage.getItem("token");
 
     // --- QUERY: BUSCA DAS RECOMENDAÇÕES DE MATCHING ---
     const { data: profissionais = [], isLoading } = useQuery({
-        // Incluir o token na queryKey garante que, se o usuário deslogar/mudar, os dados resetem
         queryKey: ['recommendations', activeToken],
         queryFn: async () => {
             if (!activeToken) throw new Error("Usuário não autenticado");
@@ -100,7 +97,6 @@ function CompatibilidadeComProfissionais() {
             const matchData = await resMatch.json();
             return matchData.recommendations || [];
         },
-        // A query só executa se houver um token ativo disponível
         enabled: !!activeToken,
     });
 
@@ -140,7 +136,8 @@ function CompatibilidadeComProfissionais() {
                         <ChevronLeft size={48} className="group-hover:-translate-x-1 transition-transform" />
                         <span className="text-lg font-medium">Voltar</span>
                     </Link>
-                    <EmergencyButton onClick={() => navigate('/emergencia')} />
+                    {/* Alterado: Agora ativa o estado do modal ao invés de navegar */}
+                    <EmergencyButton onClick={() => setShowEmergencyModal(true)} />
                 </div>
 
                 <header className="mb-8 shrink-0 w-fit flex flex-col items-start pl-[12px]">
@@ -149,7 +146,6 @@ function CompatibilidadeComProfissionais() {
                     </h1>
                 </header>
 
-                {/* 3. Renderização condicional simplificada pelas flags da Query */}
                 {isLoading ? (
                     <div className="flex-1 flex items-center justify-center text-gray-400">
                         Buscando os melhores profissionais para você...
@@ -160,7 +156,6 @@ function CompatibilidadeComProfissionais() {
                             <LinhaProfissional
                                 key={prof.professionalId}
                                 prof={prof}
-
                                 renderStars={renderStarsFromScore}
                                 defaultAvatar={DEFAULT_AVATAR}
                             />
@@ -174,6 +169,12 @@ function CompatibilidadeComProfissionais() {
                     </div>
                 )}
             </section>
+
+            {/* Inclusão do Modal de Emergência */}
+            <EmergencyModal 
+                isOpen={showEmergencyModal} 
+                onClose={() => setShowEmergencyModal(false)} 
+            />
         </main>
     );
 }

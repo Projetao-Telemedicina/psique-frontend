@@ -3,6 +3,7 @@ import Sidebar from "../components/Sidebar";
 import { ChevronLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import EmergencyButton from "../components/EmergencyButton";
+import { EmergencyModal } from "../components/EmergencyModal";// Importação do Modal adicionada (ajuste o caminho se necessário)
 import { useAuth } from "../components/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 
@@ -42,7 +43,6 @@ function CardProfissional({ prof, renderStars, defaultAvatar }: {
     const tagsExemplo = prof.tags || ["Tag1", "Tag1", "Tag1", "Tag1", "Tag1", "Tag1"];
 
     return (
-
         <Link 
             to={`/paciente/perfil_do_profissional/${prof.userId}`}
             className="bg-[#EFEFEF] rounded-[32px] p-8 shadow-xl max-w-[420px] w-full flex flex-col items-center text-center border border-gray-100/50 
@@ -95,7 +95,7 @@ function ProfissionaisEmDestaque() {
 
     const activeToken = token || localStorage.getItem("token");
 
-    // --- QUERY: SUBSTITUI O USEEFFECT E OS ESTADOS MANUAIS ---
+    // --- QUERY: BUSCA DE PROFISSIONAIS EM DESTAQUE ---
     const { data: profissionais = [], isLoading } = useQuery({
         queryKey: ['profissionaisDestaque', activeToken],
         queryFn: async () => {
@@ -110,7 +110,6 @@ function ProfissionaisEmDestaque() {
 
             const listaGeral: ListaGeralItem[] = await resUsersList.json();
 
-            // Isolamos a lógica de transformação e filtragem aqui dentro
             const apenasProfs = listaGeral.filter(
                 (u) => u.role === "PROFESSIONAL" || u.user?.role === "PROFESSIONAL"
             );
@@ -124,7 +123,7 @@ function ProfissionaisEmDestaque() {
                 user: {
                     name: p.user?.name || p.name || "Profissional",
                     email: p.user?.email || p.email || "",
-                    bio: p.user?.bio || p.bio || "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.",
+                    bio: p.user?.bio || p.bio || "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
                     avatarUrl: p.user?.avatarUrl || p.avatarUrl || null,
                     role: "PROFESSIONAL",
                 },
@@ -169,7 +168,7 @@ function ProfissionaisEmDestaque() {
                         <ChevronLeft size={48} className="group-hover:-translate-x-1 transition-transform" />
                         <span className="text-lg font-medium">Voltar</span>
                     </Link>
-                    <EmergencyButton onClick={() => navigate('/emergencia')} />
+                    <EmergencyButton onClick={() => setShowEmergencyModal(true)} />
                 </div>
 
                 <header className="mb-8 shrink-0 w-fit flex flex-col items-start pl-[12px]">
@@ -178,7 +177,6 @@ function ProfissionaisEmDestaque() {
                     </h1>
                 </header>
 
-                {/* 3. Renderização Condicional Limpa */}
                 {isLoading ? (
                     <div className="flex-1 flex items-center justify-center text-gray-400">
                         Carregando lista de profissionais...
@@ -202,6 +200,11 @@ function ProfissionaisEmDestaque() {
                     </div>
                 )}
             </section>
+
+            <EmergencyModal 
+                isOpen={showEmergencyModal} 
+                onClose={() => setShowEmergencyModal(false)} 
+            />
         </main>
     );
 }
