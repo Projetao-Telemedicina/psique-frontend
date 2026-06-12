@@ -4,7 +4,7 @@ import Sidebar from '../components/Sidebar';
 import EmergencyButton from '../components/EmergencyButton';
 import { EmergencyModal } from "../components/EmergencyModal";
 import { useAuth } from '../components/AuthContext';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 
 const DEFAULT_AVATAR = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
 
@@ -25,34 +25,20 @@ interface ProfessionalData {
     tags?: string[];
 }
 
-interface AppointmentData {
+interface Review {
     id: string;
-    patientId: string;
-    professionalId: string;
-    status: string;
-    startsAt: string;
-    endsAt: string;
-    priceCents: number;
+    rating: number;
+    comment: string;
 }
 
-interface TimeSlot {
+interface Slot {
     time: string;
     status: 'available' | 'unavailable';
 }
 
 interface DaySchedule {
     date: string;
-    slots: TimeSlot[];
-}
-
-interface ReviewData {
-    id: string;
-    appointmentId: string;
-    patientId: string;
-    professionalId: string;
-    rating: number;
-    comment: string;
-    createdAt: string;
+    slots: Slot[];
 }
 
 export default function MarcarComProfissional() {
@@ -65,8 +51,8 @@ export default function MarcarComProfissional() {
     const [selectedSlot, setSelectedSlot] = useState<{ date: string; time: string } | null>(null);
     const [isReviewsModalOpen, setIsReviewsModalOpen] = useState(false);
 
-    const HORARIOS_ATENDIMENTO = ['09:00', '10:00', '12:00', '14:00', '16:00', '17:00'];
     const activeToken = token || localStorage.getItem('token');
+    const queryClient = useQueryClient();
 
     // --- QUERY PARA DETALHES DO PROFISSIONAL E GRADE DE HORÁRIOS ---
     const { data: profData, isLoading: loading } = useQuery({
@@ -79,17 +65,41 @@ export default function MarcarComProfissional() {
                 'Content-Type': 'application/json'
             } : { 'Content-Type': 'application/json' };
 
-            const [resProf, resAppt] = await Promise.all([
-                fetch(`/api/users/${id}`, { headers }),
-                fetch(`/api/appointments/me/upcoming`, { headers })
-            ]);
-
+            // 1. Busca os dados do profissional
+            const resProf = await fetch(`/api/professionals/${id}`, { headers });
             if (!resProf.ok) throw new Error('Erro ao buscar profissional');
-
             const dataProf = await resProf.json();
-            const dataAppts: AppointmentData[] = resAppt.ok ? await resAppt.json() : [];
-            const consultasDesteProfissional = dataAppts.filter(app => app.professionalId === id);
 
+            // 2. Prepara os próximos 6 dias para consulta
+            const hoje = new Date();
+            const diasParaConsultar = Array.from({ length: 6 }).map((_, i) => {
+                const d = new Date(hoje);
+                d.setDate(hoje.getDate() + i);
+                return {
+                    exibicao: d.toLocaleDateString('pt-BR'), // DD/MM/YYYY
+                    api: d.toISOString().split('T')[0]        // YYYY-MM-DD
+                };
+            });
+
+            // 3. Busca os horários disponíveis para cada dia 
+            const gradeHorarios = await Promise.all(diasParaConsultar.map(async (dia) => {
+                const resSlots = await fetch(`/api/professionals/${id}/available-slots?date=${dia.api}`, { headers });
+                const slots = resSlots.ok ? await resSlots.json() : [];
+
+                return {
+                    date: dia.exibicao,
+                    slots: slots.map((s: { startsAt: string }) => ({
+                        time: new Date(s.startsAt).toLocaleTimeString('pt-BR', { 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            timeZone: 'UTC' // Importante para não deslocar a hora baseado no fuso local
+                        }),
+                        status: 'available' as const
+                    }))
+                };
+            }));
+
+            // Formatação do perfil do profissional
             const profFormatado: ProfessionalData = {
                 id: dataProf.id || id,
                 crp: dataProf.crp || "Registro não informado",
@@ -107,39 +117,7 @@ export default function MarcarComProfissional() {
                 }
             };
 
-            // Geração da grade de horários movida para o QueryFn (Cacheável)
-            const agendamentosGerados: DaySchedule[] = [];
-            const hoje = new Date();
-
-            for (let i = 0; i < 6; i++) {
-                const dataCorrente = new Date(hoje);
-                dataCorrente.setDate(hoje.getDate() + i);
-
-                const diaStr = String(dataCorrente.getDate()).padStart(2, '0');
-                const mesStr = String(dataCorrente.getMonth() + 1).padStart(2, '0');
-                const anoStr = dataCorrente.getFullYear();
-                const dataFormatada = `${diaStr}/${mesStr}/${anoStr}`;
-
-                const slotsDia = HORARIOS_ATENDIMENTO.map(hora => {
-                    const [h, m] = hora.split(':');
-                    const dataDoSlot = new Date(dataCorrente.getFullYear(), dataCorrente.getMonth(), dataCorrente.getDate(), Number(h), Number(m));
-                    const jaPassou = dataDoSlot.getTime() < new Date().getTime();
-
-                    const horarioOcupado = consultasDesteProfissional.some(consulta => {
-                        const dataConsulta = new Date(consulta.startsAt);
-                        return dataConsulta.getTime() === dataDoSlot.getTime();
-                    });
-
-                    return {
-                        time: hora,
-                        status: (jaPassou || horarioOcupado) ? 'unavailable' : 'available' as 'unavailable' | 'available'
-                    };
-                });
-
-                agendamentosGerados.push({ date: dataFormatada, slots: slotsDia });
-            }
-
-            return { prof: profFormatado, gradeHorarios: agendamentosGerados };
+            return { prof: profFormatado, gradeHorarios };
         },
         enabled: !!id,
     });
@@ -173,7 +151,8 @@ export default function MarcarComProfissional() {
             const [hora, min] = slot.time.split(':');
 
             const startsAtDate = new Date(Number(ano), Number(mes) - 1, Number(dia), Number(hora), Number(min));
-            const endsAtDate = new Date(startsAtDate.getTime() + 50 * 60000);
+            const durationMs = 60 * 60000; // Sessões de 60 minutos (padrão da branch dev)
+            const endsAtDate = new Date(startsAtDate.getTime() + durationMs);
 
             const patientId = user?.id || localStorage.getItem('userId');
 
@@ -201,6 +180,7 @@ export default function MarcarComProfissional() {
         onSuccess: (data) => {
             alert(data?.message || 'Consulta agendada com sucesso!');
             setIsModalOpen(false);
+            queryClient.invalidateQueries({ queryKey: ['professionalDetails'] });
             navigate('/paciente/home');
         },
         onError: (error: any) => {
@@ -338,7 +318,7 @@ export default function MarcarComProfissional() {
                         </p>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-10 pb-12">
-                            {gradeHorarios.map((dia, idx) => (
+                            {gradeHorarios.map((dia: DaySchedule, idx: number) => (
                                 <div key={idx} className="flex flex-col gap-4">
                                     <div className="flex items-center gap-3">
                                         <div className="p-2 rounded-full border border-blue-400 text-blue-500">
@@ -430,7 +410,7 @@ export default function MarcarComProfissional() {
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                                {reviews.map((rev) => (
+                                {reviews.map((rev: Review) => (
                                     <div key={rev.id} className="bg-[#E4E4E4] rounded-2xl p-6 flex flex-col justify-between gap-4">
                                         <div>
                                             <div className="flex gap-1 mb-3 text-amber-400">

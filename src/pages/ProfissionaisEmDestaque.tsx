@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import Sidebar from "../components/Sidebar";
 import { ChevronLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import EmergencyButton from "../components/EmergencyButton";
-import { EmergencyModal } from "../components/EmergencyModal";
 import { useAuth } from "../components/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 
@@ -23,7 +22,7 @@ interface ProfessionalFormat {
     specialty: string;
     scoreAvg: string;
     reviewCount: number;
-    tags?: string[];
+    tags?: string[]; 
     user: {
         name: string;
         email: string;
@@ -35,15 +34,16 @@ interface ProfessionalFormat {
 
 type ListaGeralItem = UserFormat & Partial<ProfessionalFormat>;
 
-function CardProfissional({ prof, renderStars, defaultAvatar }: {
-    prof: ProfessionalFormat,
+function CardProfissional({ prof, renderStars, defaultAvatar }: { 
+    prof: ProfessionalFormat, 
     renderStars: (score: string) => React.ReactNode,
-    defaultAvatar: string
+    defaultAvatar: string 
 }) {
     const tagsExemplo = prof.tags || ["Tag1", "Tag1", "Tag1", "Tag1", "Tag1", "Tag1"];
 
     return (
-        <Link
+
+        <Link 
             to={`/paciente/perfil_do_profissional/${prof.userId}`}
             className="bg-[#EFEFEF] rounded-[32px] p-8 shadow-xl max-w-[420px] w-full flex flex-col items-center text-center border border-gray-100/50 
                        transition-all duration-300 ease-in-out 
@@ -69,8 +69,8 @@ function CardProfissional({ prof, renderStars, defaultAvatar }: {
 
             <div className="grid grid-cols-3 gap-2 w-full mb-6">
                 {tagsExemplo.slice(0, 6).map((tag, index) => (
-                    <span
-                        key={index}
+                    <span 
+                        key={index} 
                         className="bg-[#A3D1C1] text-[#4A7A6A] text-xs font-semibold py-2 px-3 rounded-full truncate text-center"
                     >
                         {tag}
@@ -86,7 +86,8 @@ function CardProfissional({ prof, renderStars, defaultAvatar }: {
 }
 
 function ProfissionaisEmDestaque() {
-    const { token } = useAuth();
+    const navigate = useNavigate();
+    const { user, token } = useAuth();
     const [showEmergencyModal, setShowEmergencyModal] = useState(false);
 
     const TIPO_USUARIO = "paciente";
@@ -159,11 +160,6 @@ function ProfissionaisEmDestaque() {
         <main className="flex h-screen w-full overflow-hidden bg-white font-sans antialiased text-slate-800">
             <Sidebar role={TIPO_USUARIO} itemAtivo="home" />
 
-            <EmergencyModal
-                isOpen={showEmergencyModal}
-                onClose={() => setShowEmergencyModal(false)}
-            />
-
             <section className="flex flex-col flex-1 overflow-hidden px-12 py-8 relative">
                 <div className="flex items-center justify-between mb-6 shrink-0 w-full">
                     <Link
@@ -173,7 +169,7 @@ function ProfissionaisEmDestaque() {
                         <ChevronLeft size={48} className="group-hover:-translate-x-1 transition-transform" />
                         <span className="text-lg font-medium">Voltar</span>
                     </Link>
-                    <EmergencyButton onClick={() => setShowEmergencyModal(true)} />
+                    <EmergencyButton onClick={() => navigate('/emergencia')} />
                 </div>
 
                 <header className="mb-8 shrink-0 w-fit flex flex-col items-start pl-[12px]">
@@ -190,9 +186,9 @@ function ProfissionaisEmDestaque() {
                 ) : (
                     <div className="flex-1 overflow-y-auto pr-2 pl-[12px] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-start content-start">
                         {profissionais.map((prof) => (
-                            <CardProfissional
-                                key={prof.userId}
-                                prof={prof}
+                            <CardProfissional 
+                                key={prof.userId} 
+                                prof={prof} 
                                 renderStars={renderStarsFromScore}
                                 defaultAvatar={DEFAULT_AVATAR}
                             />
