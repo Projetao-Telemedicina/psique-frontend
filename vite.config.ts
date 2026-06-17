@@ -13,7 +13,13 @@ export default defineConfig({
         //secure: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, ''),
-      }
+      },
+
+      '/socket.io': {
+        target: 'http://localhost:3000',
+        ws: true,
+        changeOrigin: true,
+      },
     }
   }
 });
