@@ -29,6 +29,7 @@ const Estatisticas = lazy(() => import('./pages/Estatisticas.tsx'));
 const TelaInicialProfissional = lazy(() => import('./pages/TelaInicialProfissional.tsx'));
 const Chat = lazy(() => import('./pages/Chat.tsx'));
 const Planos = lazy(() => import('./pages/Planos.tsx'));
+const Pagamento = lazy(() => import('./pages/Pagamento.tsx'));
 
 function App() {
   return (
@@ -95,6 +96,7 @@ function App() {
             <Route path='/match' element={<QuestionarioMatch />} />
             <Route path='/agenda' element={<Agenda />} />
             <Route path='/chat' element={<Chat />} />
+            <Route path='/pagamento' element={<Pagamento />} />
           </Route>
         </Routes>
       </Suspense>
