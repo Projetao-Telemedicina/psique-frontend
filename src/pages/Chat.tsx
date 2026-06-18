@@ -67,12 +67,15 @@ export default function Chat() {
   useEffect(() => {
     if (!activeToken) return;
 
-    const newSocket = io('https://psique-backend-x82n.onrender.com', {
-      path: '/chat',
+    const newSocket = io('https://psique-backend-x82n.onrender.com/chat', {
       auth: {
         token: activeToken,
       },
       transports: ['websocket'],
+      withCredentials: true,
+      extraHeaders: {
+        "Origin":"https://psique-frontend.vercel.app"
+      }
     });
 
     newSocket.on('connect', () => {
