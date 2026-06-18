@@ -67,7 +67,8 @@ export default function Chat() {
   useEffect(() => {
     if (!activeToken) return;
 
-    const newSocket = io('/chat', {
+    const newSocket = io('https://psique-backend-x82n.onrender.com', {
+      path: '/chat',
       auth: {
         token: activeToken,
       },
