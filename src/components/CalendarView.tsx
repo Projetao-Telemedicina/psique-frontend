@@ -21,9 +21,10 @@ interface Appointment {
 interface CalendarViewProps {
   appointments: Appointment[];
   onSelectAppointment: (appointment: Appointment) => void;
+  isProfissional: boolean;
 }
 
-export default function CalendarView({ appointments, onSelectAppointment }: CalendarViewProps) {
+export default function CalendarView({ appointments, onSelectAppointment, isProfissional }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const currentYear = currentDate.getFullYear();
@@ -49,10 +50,10 @@ export default function CalendarView({ appointments, onSelectAppointment }: Cale
     month: 'short'
   }).replace('.', '');
 
-  const getParticipantName = (app: Appointment) => {
-    if (app.professional?.user?.name) return app.professional.user.name;
-    if (app.patient?.user?.name) return app.patient.user.name;
-    return "Consulta Psique";
+  const getDisplayName = (app: Appointment) => {
+    return isProfissional 
+      ? (app.patient?.user?.name || "Paciente") 
+      : (app.professional?.user?.name || "Profissional");
   };
 
   return (
@@ -124,7 +125,8 @@ export default function CalendarView({ appointments, onSelectAppointment }: Cale
                         onClick={() => onSelectAppointment(consulta)}
                         className="w-full bg-[#52B788] hover:bg-[#409A70] text-white text-[10px] font-bold py-1 px-2 rounded-lg text-left flex flex-col justify-between truncate transition-all cursor-pointer shrink-0"
                       >
-                        <span className="truncate block w-full">{getParticipantName(consulta)}</span>
+                        {getDisplayName(consulta)} 
+  
                         <span className="text-[9px] opacity-90 mt-0.5 block">
                           {new Date(consulta.startsAt).toLocaleTimeString('pt-BR', { 
                             hour: '2-digit', 

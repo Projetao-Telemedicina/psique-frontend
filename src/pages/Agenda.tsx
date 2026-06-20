@@ -183,9 +183,15 @@ export default function Agenda() {
   };
 
   const getParticipantName = (app: Appointment) => {
-    if (app.professional?.user?.name) return app.professional.user.name;
-    if (app.patient?.user?.name) return app.patient.user.name;
-    return "Consulta Psique";
+    const isProfissionalLogado = getSidebarRole() === 'profissional';
+
+    // Se eu sou profissional, quero o nome do paciente
+    if (isProfissionalLogado) {
+      return app.patient?.user?.name || "Paciente";
+    } 
+  
+    // Se eu sou paciente, quero o nome do profissional
+    return app.professional?.user?.name || "Profissional";
   };
 
   return (
@@ -226,6 +232,7 @@ export default function Agenda() {
             <CalendarView
               appointments={appointments}
               onSelectAppointment={setSelectedAppointment}
+              isProfissional={isProfissional}
             />
 
             <div className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm flex flex-col text-left">
