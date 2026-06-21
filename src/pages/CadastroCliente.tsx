@@ -2,6 +2,7 @@ import { useState } from 'react';
 import HeroSection from '../components/HeroSection.js';
 
 import { ChevronLeft, EyeOff, Eye, Phone } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 function CadastroPaciente() {
     const [etapa, setEtapa] = useState(1);
@@ -50,7 +51,7 @@ function CadastroPaciente() {
         }
 
         if (formData.password !== formData.confirmPassword) {
-            alert("As senhas não coincidem!");
+            toast.error("As senhas não coincidem!");
             return;
         }
 
@@ -89,15 +90,15 @@ function CadastroPaciente() {
             });
 
             if (response.ok) {
-                alert("Cadastro de paciente realizado com sucesso!");
+                toast.success("Cadastro de paciente realizado com sucesso!");
                 window.location.href = '/login';
             } else {
                 const errorData = await response.json();
-                alert(`Erro: ${errorData.message || 'Falha no cadastro'}`);
+                toast.error(`Erro: ${errorData.message || 'Falha no cadastro'}`);
             }
         } catch (error) {
             console.error("Erro detalhado do registro:", error);
-            alert("Erro ao conectar com o servidor.");
+            toast.error("Erro ao conectar com o servidor.");
         } finally {
             setLoading(false);
         }

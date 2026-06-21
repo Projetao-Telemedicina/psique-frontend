@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'; 
 import { toast } from 'react-hot-toast'; 
 import { MatchSidebar } from '../components/MatchSidebar';
@@ -9,6 +9,35 @@ import { useAuth } from '../components/AuthContext';
 export default function QuestionarioMatch() {
   const { user, token } = useAuth();
   const navigate = useNavigate(); 
+
+  const [fetchedGender, setFetchedGender] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserGender = async () => {
+      const userId = user?.id || localStorage.getItem('userId');
+      if (!userId || !token) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/professionals/${userId}`, { 
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setFetchedGender(Number(data.user?.gender) || 0);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar gênero:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchUserGender();
+  }, [token, user]);
 
   const [stepData, setStepData] = useState({ current: 1, total: 1 });
   const progressPercentage = Math.round((stepData.current / stepData.total) * 100) || 0;
@@ -50,6 +79,10 @@ export default function QuestionarioMatch() {
 
   const isProfessional = user?.role === 'PROFESSIONAL';
 
+  if (loading) {
+    return <div className="flex h-screen w-full items-center justify-center">Carregando...</div>;
+  }
+
   return (
     <main className="flex h-screen w-full overflow-hidden bg-[#F8FAFC]">
       <MatchSidebar 
@@ -62,7 +95,7 @@ export default function QuestionarioMatch() {
         <ProfessionalForm 
           onStepChange={handleStepChange} 
           onFinish={handleFormFinish} 
-          userGender={user?.gender ? Number(user.gender) : 0} 
+          userGender={fetchedGender} 
         />
       ) : (
         <PatientForm 

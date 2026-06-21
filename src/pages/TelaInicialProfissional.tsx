@@ -98,8 +98,11 @@ export default function TelaInicialProfissional() {
           'Content-Type': 'application/json' 
         };
 
-        const profileRes = await fetch('/users/me', { headers });
-        if (profileRes.ok) {
+        const userId = user?.id || localStorage.getItem('userId');
+        const profileRes = userId
+          ? await fetch(`/api/users/${userId}`, { headers })
+          : null;
+        if (profileRes?.ok) {
           const profileData = await profileRes.json();
           setProfile({
             name: profileData.name || '',
@@ -108,7 +111,7 @@ export default function TelaInicialProfissional() {
         }
 
         // 2. Busca consultas futuras agendadas
-        const res = await fetch('/appointments/me/upcoming', { headers });
+        const res = await fetch('/api/appointments/me/upcoming', { headers });
         if (res.ok) {
           const data: Appointment[] = await res.json();
           setUpcomingAppointments(data);
@@ -119,9 +122,9 @@ export default function TelaInicialProfissional() {
 
           // Sessões na Semana
           const now = new Date();
-          const currentDay = now.getDay(); 
+          const currentDay = now.getDay();
           const distanceToMonday = currentDay === 0 ? 6 : currentDay - 1;
-          
+
           const startOfWeek = new Date(now);
           startOfWeek.setDate(now.getDate() - distanceToMonday);
           startOfWeek.setHours(0, 0, 0, 0);
@@ -131,7 +134,7 @@ export default function TelaInicialProfissional() {
           endOfWeek.setHours(23, 59, 59, 999);
 
           const weeklyApps = data.filter(app => {
-            const appDate = new Date(app.startsAt);
+          const appDate = new Date(app.startsAt);
             return appDate >= startOfWeek && appDate <= endOfWeek;
           });
           setWeeklySessionsCount(weeklyApps.length);
@@ -165,7 +168,7 @@ export default function TelaInicialProfissional() {
       <div className="flex h-screen w-full items-center justify-center bg-[#F8FAFC]">
         <div className="text-center flex flex-col items-center gap-2">
           <Loader2 className="h-8 w-8 animate-spin text-[#52A796]" />
-          <p className="text-sm text-slate-500 font-medium">Carregando painel real...</p>
+          <p className="text-sm text-slate-500 font-medium">Carregando página...</p>
         </div>
       </div>
     );

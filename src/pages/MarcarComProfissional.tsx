@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import EmergencyButton from '../components/EmergencyButton';
 import { EmergencyModal } from "../components/EmergencyModal";
 import { useAuth } from '../components/AuthContext';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-
+import { toast } from 'react-hot-toast';
+import StatCard from '../components/StatCard';
+import { CheckCircle, Timer, Users, Star } from 'lucide-react';
 const DEFAULT_AVATAR = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
 
 interface ProfessionalData {
@@ -54,6 +56,13 @@ export default function MarcarComProfissional() {
 
     const activeToken = token || localStorage.getItem('token');
     const queryClient = useQueryClient();
+
+    const [stats, setStats] = useState({ 
+        sessionsCompleted: 0, 
+        hoursAttended: 0, 
+        clientsAttended: 0 
+    });
+
 
     // --- QUERY PARA DETALHES DO PROFISSIONAL E GRADE DE HORÁRIOS ---
     const { data: profData, isLoading: loading } = useQuery({
@@ -126,6 +135,31 @@ export default function MarcarComProfissional() {
     const prof = profData?.prof;
     const gradeHorarios = profData?.gradeHorarios || [];
 
+    useEffect(() => {
+        const fetchHistoryAndCalculate = async () => {
+            if (!prof?.id || !activeToken) return;
+
+            try {
+                const res = await fetch(`/api/appointments/me/history?limit=100`, { 
+                    headers: { 'Authorization': `Bearer ${activeToken}` } 
+                });
+                const data = await res.json();
+            
+                const completed = data.filter((a: any) => a.status === 'COMPLETED');
+            
+                setStats({
+                    sessionsCompleted: completed.length,
+                    hoursAttended: completed.length * 1,
+                    clientsAttended: new Set(completed.map((a: any) => a.patientId)).size
+                });
+            } catch (error) {
+                console.error("Erro ao calcular estatísticas:", error);
+            }
+        };
+
+        fetchHistoryAndCalculate();
+    }, [prof?.id, activeToken]);
+
     // --- QUERY PARA AS AVALIAÇÕES (LAZY LOADING) ---
     const { data: reviews = [], isLoading: reviewsLoading } = useQuery({
         queryKey: ['professionalReviews', id, activeToken],
@@ -179,7 +213,7 @@ export default function MarcarComProfissional() {
             return data;
         },
         onSuccess: (data) => {
-            alert(data?.message || 'Consulta agendada com sucesso!');
+            toast.success(data?.message || 'Consulta agendada com sucesso!');
             setIsModalOpen(false);
             queryClient.invalidateQueries({ queryKey: ['professionalDetails'] });
             navigate('/paciente/home');
@@ -187,7 +221,7 @@ export default function MarcarComProfissional() {
         onError: (error: any) => {
             console.error('Erro no servidor:', error);
             const errorMessage = Array.isArray(error?.message) ? error.message.join(', ') : error?.message;
-            alert(errorMessage || 'Falha no servidor ao agendar.');
+            toast.error(errorMessage || 'Falha no servidor ao agendar.');
         }
     });
 
@@ -264,7 +298,7 @@ export default function MarcarComProfissional() {
                             >
                                 Ver avaliações &gt;
                             </p>
-                            <p className="text-sm text-gray-400 leading-relaxed max-w-2xl mt-2">{prof.user.bio}</p>
+                            <p className="text-base text-slate-700 leading-relaxed max-w-2xl mt-2 text-left">{prof.user.bio}</p>
                         </div>
                         <div className="md:w-64 shrink-0 mt-2">
                             <h3 className="text-sm font-semibold text-slate-600 mb-3">Atuações e perfil</h3>
@@ -278,37 +312,26 @@ export default function MarcarComProfissional() {
 
                     {/* Cards de Estatísticas */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div className="bg-[#F2F2F2] rounded-3xl p-6 shadow-xs flex flex-col justify-between h-36">
-                            <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                            <div>
-                                <p className="text-3xl font-bold text-slate-700">{prof.sessionsCompleted}</p>
-                                <p className="text-xs font-semibold text-slate-500 mt-1">Sessões concluídas</p>
-                            </div>
-                        </div>
-
-                        <div className="bg-[#F2F2F2] rounded-3xl p-6 shadow-xs flex flex-col justify-between h-36">
-                            <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            <div>
-                                <p className="text-3xl font-bold text-slate-700">{prof.hoursAttended}</p>
-                                <p className="text-xs font-semibold text-slate-500 mt-1">Horas de atendimento</p>
-                            </div>
-                        </div>
-
-                        <div className="bg-[#F2F2F2] rounded-3xl p-6 shadow-xs flex flex-col justify-between h-36">
-                            <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            <div>
-                                <p className="text-3xl font-bold text-slate-700">{prof.clientsAttended}</p>
-                                <p className="text-xs font-semibold text-slate-500 mt-1">Clientes atendidos</p>
-                            </div>
-                        </div>
-
-                        <div className="bg-[#F2F2F2] rounded-3xl p-6 shadow-xs flex flex-col justify-between h-36">
-                            <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
-                            <div>
-                                <p className="text-3xl font-bold text-slate-700">{prof.reviewCount}</p>
-                                <p className="text-xs font-semibold text-slate-500 mt-1">avaliações</p>
-                            </div>
-                        </div>
+                        <StatCard 
+                            value={stats.sessionsCompleted} 
+                            label="Sessões concluídas" 
+                            icon={<CheckCircle size={40} className="text-slate-600" />} 
+                        />
+                        <StatCard 
+                            value={stats.hoursAttended} 
+                            label="Horas de atendimento" 
+                            icon={<Timer size={40} className="text-slate-600" />} 
+                        />
+                        <StatCard 
+                            value={stats.clientsAttended} 
+                            label="Clientes atendidos" 
+                            icon={<Users size={40} className="text-slate-600" />} 
+                        />
+                        <StatCard 
+                            value={prof.reviewCount} 
+                            label="Avaliações" 
+                            icon={<Star size={40} className="text-slate-600" />} 
+                        />
                     </div>
 
                     {/* Grade de Horários */}
