@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import HeroSection from '../components/HeroSection.js';
 import { useAuth } from '../components/AuthContext';
+import { toast } from 'react-hot-toast';
 
 function Login() {
     const [showPassword, setShowPassword] = useState(false);
@@ -29,7 +30,7 @@ function Login() {
             } else {
                 const errorData = await response.json();
                 console.log("Validation Error:", errorData);
-                alert(`Erro: ${errorData.message}`);
+                toast.error(`Erro: ${errorData.message}`);
             }
         } catch (error) {
             console.error("Erro ao conectar ao servidor", error);

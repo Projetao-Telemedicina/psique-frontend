@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Bell, Eye, Check, X, FileText, Loader2, User } from 'lucide-react';
 import Sidebar from '../components/Sidebar.tsx';
+import { toast } from 'react-hot-toast';
 
 interface ValidationRequest {
     id: string;
@@ -76,15 +77,15 @@ function ValidacaoCadastro() {
             });
 
             if (response.ok) {
-                alert("Profissional aprovado!");
+                toast.success("Profissional aprovado!");
                 loadRequests();
             } else {
                 const error = await response.json();
-                alert(`Erro ao aprovar: ${error.message || 'Erro desconhecido'}`);
+                toast.error(`Erro ao aprovar: ${error.message || 'Erro desconhecido'}`);
             }
         } catch (error) {
             console.error("Erro detalhado do registro:", error);
-            alert("Erro na conexão com o servidor.");
+            toast.error("Erro na conexão com o servidor.");
 
         } finally {
             setActionLoading(false);
@@ -106,12 +107,12 @@ function ValidacaoCadastro() {
                 body: JSON.stringify({ rejectionReason: reason })
             });
             if (response.ok) {
-                alert("Cadastro rejeitado.");
+                toast.success("Cadastro rejeitado.");
                 loadRequests();
             }
         } catch (error) {
             console.error("Erro detalhado do registro:", error);
-            alert("Erro ao rejeitar.");
+            toast.error("Erro ao rejeitar.");
         } finally {
             setActionLoading(false);
         }
