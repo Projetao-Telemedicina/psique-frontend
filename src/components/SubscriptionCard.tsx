@@ -67,7 +67,7 @@ export function SubscriptionCard({ subscription }: { subscription: any }) {
             </div>
             <div className="bg-white rounded-2xl px-4 py-3">
               <p className="text-xs font-semibold text-slate-400 mb-0.5">Início</p>
-              <p className="font-semibold text-slate-700 text-xs">{formatDate(subscription.startedAt)}</p>
+              <p className="font-semibold text-slate-700 text-xs">{formatDate(subscription.createdAt)}</p>
             </div>
           </div>
 
@@ -78,11 +78,12 @@ export function SubscriptionCard({ subscription }: { subscription: any }) {
           )}
 
           <div>
-            <p className="text-xs font-semibold text-slate-500 mb-3">Benefícios</p>
+            <p className="text-xs font-bold text-slate-700 mb-3 uppercase tracking-wider">Benefícios</p>
             <ul className="flex flex-col gap-1.5">
               {subscription.plan.benefits.map((b: string, i: number) => (
-                <li key={i} className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#6AB092]" /> {b}
+                <li key={i} className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#6AB092]" />
+                  {b}
                 </li>
               ))}
             </ul>
@@ -92,10 +93,10 @@ export function SubscriptionCard({ subscription }: { subscription: any }) {
         {/* Ações */}
         <div className="flex flex-col gap-3">
           <button 
-            onClick={() => navigate('/paciente/planos')}
+            onClick={() => navigate('/planos')}
             className="w-full bg-[#5EBA91] hover:bg-[#4EAB82] text-white text-sm font-semibold py-3 rounded-full transition-colors cursor-pointer"
           >
-            Gerenciar assinatura
+            Ver todos os planos
           </button>
           {canCancel && (
             <button onClick={() => setShowCancelModal(true)} className="w-full bg-transparent hover:bg-red-50 text-red-500 text-sm font-semibold py-3 rounded-full border border-red-200 transition-colors cursor-pointer">
