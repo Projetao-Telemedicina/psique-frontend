@@ -1,15 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Pencil, Trash2, Star, X, Save, 
-  Camera, MapPin, Loader2, Settings
+  Star, Loader2, ClipboardList
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-
 import Sidebar from '../components/Sidebar';
 import ModalDeletarConta from '../components/ModalDeletarConta';
-import { CampoPerfil } from '../components/CampoPerfil';
 import { useAuth } from '../components/AuthContext';
+import {ProfissionalProfileForm} from '../components/ProfissionalProfileForm';
 
 interface UpdateUserPayload {
   name: string;
@@ -36,6 +34,8 @@ interface DadosProfissional {
   approvalStatus: string;
   scoreAvg: string;
   reviewCount: number;
+  isPromoted: boolean;
+  promotionEndsAt: string | null;
   user: {
     id: string;
     name: string;
@@ -117,30 +117,25 @@ export default function VisualizarPerfilProfissional() {
     if (!dados) return false;
     const { cep, city, state, number } = dados.user;
 
-    // 1. Validação do CEP (Apenas números e exatamente 8 dígitos após a limpeza)
     const cepLimpo = String(cep || "").replace(/\D/g, "");
     if (cepLimpo.length !== 8) {
       toast.error("O campo CEP deve conter exatamente 8 números válidos.");
       return false;
     }
 
-    // 2. Validação de Cidade (Não pode aceitar números)
     const regexCidade = /^[A-Za-zÀ-ÿçÇ__]+$/;
     if (!regexCidade.test(city.trim())) {
       toast.error("O campo Cidade deve conter apenas caracteres alfabéticos.");
       return false;
     }
 
-    // 3. Validação de Estado (Apenas letras, sem emojis, caracteres especiais ou números - Idealmente UF com 2 letras)
     const stateTrimmed = state.trim();
-    const regexEstado = /^[A-Za-zÀ-ÿ\s]{2,}$/; // Mínimo de 2 letras (aceita tanto "PE" quanto "Pernambuco")
+    const regexEstado = /^[A-Za-zÀ-ÿ\s]{2,}$/;
     if (!regexEstado.test(stateTrimmed)) {
       toast.error("O campo Estado inválido. Use apenas caracteres alfabéticos (Ex: PE ou Pernambuco).");
       return false;
     }
 
-    // 4. Validação do Número (Deve conter pelo menos um dígito numérico ou aceitar variações padrão como "S/N")
-    // Impede textos puramente inválidos ou vazios cheios de lixo
     const numberTrimmed = number.trim();
     const regexNumero = /^[0-9]+[A-Za-z]?$|^[sS]\/[nN]$|^[sS]em\s[nN]úmero$/;
     if (!regexNumero.test(numberTrimmed)) {
@@ -164,7 +159,7 @@ export default function VisualizarPerfilProfissional() {
         phone: String(dados.user.phone || "").replace(/\D/g, ""),
         avatarUrl: dados.user.avatarUrl,
         bio: dados.user.bio,
-        cep: String(dados.user.cep || "").replace(/\D/g, ""),
+        cep: dados.user.cep,
         city: dados.user.city,
         state: dados.user.state,
         street: dados.user.street,
@@ -296,159 +291,67 @@ export default function VisualizarPerfilProfissional() {
             </h1>
             <p className="text-slate-500 text-sm">Gerencie suas informações profissionais e plano.</p>
           </div>
+          {!isEditing && (
+            <button
+              onClick={() => navigate('/match')}
+              className="px-6 py-3 bg-teal-600 text-white font-bold text-sm rounded-full hover:bg-teal-700 transition-all shadow-md flex items-center justify-center gap-2"
+            >
+              <ClipboardList size={16} /> Responder Questionário
+            </button>
+          )}
         </header>
 
         <div className="flex-1 overflow-y-auto p-8">
           <div className="flex gap-8 items-start max-w-[1400px] mx-auto">
             
-            <article className="flex-1 bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
-              <div className="p-8">
-                
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-6">
-                    <div 
-                      onClick={() => isEditing && fileInputRef.current?.click()}
-                      className={`w-32 h-32 rounded-full flex items-center justify-center text-white shadow-lg border-4 border-white shrink-0 relative overflow-hidden transition-all bg-teal-600 ${isEditing ? 'cursor-pointer hover:opacity-90' : ''}`}
-                    >
-                      {dados.user.avatarUrl ? (
-                        <img src={dados.user.avatarUrl} alt="Perfil" className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-4xl font-bold">{dados.user.name[0]}</span>
-                      )}
-                      {isEditing && (
-                        <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center backdrop-blur-[1px]">
-                          <Camera size={20} />
-                          <span className="text-[10px] font-bold mt-1 tracking-widest uppercase">Alterar</span>
-                        </div>
-                      )}
-                      <input type="file" ref={fileInputRef} hidden onChange={handleFotoChange} accept="image/*" />
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-bold text-slate-800">{dados.user.name}</h2>
-                      <p className="text-teal-600 font-medium tracking-tight italic">{dados.specialty}</p>
-                      <div className="flex items-center gap-1 mt-1">
-                        {Array.from({ length: estrelasCalculadas }).map((_, index) => (
-                          <Star key={index} size={14} fill="#FACC15" color="#FACC15" />
-                        ))}
-                        {Array.from({ length: 5 - estrelasCalculadas }).map((_, index) => (
-                          <Star key={index} size={14} fill="transparent" color="#CBD5E1" />
-                        ))}
-                        <span className="text-xs text-slate-400 font-medium ml-1">
-                          {dados.scoreAvg} ({dados.reviewCount} avaliações)
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {!isEditing && (
-                    <div className="flex flex-col items-center gap-2 text-center w-[240px]">
-                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest w-full">
-                        Quer ajustar seu público?
-                      </span>
-                      <button 
-                        type="button"
-                        onClick={() => navigate('/match')}
-                        className="w-full text-xs bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-bold shadow-md transition-all active:scale-95"
-                      >
-                        Responder questionário de match
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                <div className="border-t border-slate-50 pt-8 text-left">
-                  <div className="grid grid-cols-2 gap-y-6 gap-x-12">
-                    <div className="col-span-2">
-                      <CampoPerfil 
-                        label="Sobre mim" 
-                        valor={dados.user.bio} 
-                        isEditing={isEditing} 
-                        type="textarea"
-                        onChange={(v) => setDados({...dados, user: {...dados.user, bio: v}})} 
-                      />
-                    </div>
-
-                    <CampoPerfil label="Nome completo" valor={dados.user.name} isEditing={isEditing} onChange={(v) => setDados({...dados, user: {...dados.user, name: v}})} />
-                    <CampoPerfil label="E-mail" valor={dados.user.email} isEditing={false} />
-                    <CampoPerfil label="CPF" valor={maskCPF(dados.user.cpf)} isEditing={false} />
-                    <CampoPerfil label="Telefone" valor={maskPhone(dados.user.phone)} isEditing={isEditing} onChange={(v) => setDados({...dados, user: {...dados.user, phone: v}})} />
-                    <CampoPerfil label="Gênero" valor={dados.user.gender} isEditing={isEditing} type="select" options={opcoesGenero} onChange={(v) => setDados({...dados, user: {...dados.user, gender: v}})} />
-                    <CampoPerfil label="Registro Profissional (CRP)" valor={dados.crp} isEditing={false} />
-                    <CampoPerfil label="Especialidade" valor={dados.specialty} isEditing={isEditing} onChange={(v) => setDados({...dados, specialty: v})} />
-                    
-                    <div className="col-span-2 mt-4 flex items-center gap-2">
-                       <MapPin size={14} className="text-slate-400" />
-                       <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Localização</h3>
-                    </div>
-                    <CampoPerfil label="CEP" valor={dados.user.cep} isEditing={isEditing} onChange={(v) => setDados({...dados, user: {...dados.user, cep: v}})} />
-                    <CampoPerfil label="Cidade" valor={dados.user.city} isEditing={isEditing} onChange={(v) => setDados({...dados, user: {...dados.user, city: v}})} />
-                    <CampoPerfil label="Estado" valor={dados.user.state} isEditing={isEditing} onChange={(v) => setDados({...dados, user: {...dados.user, state: v}})} />
-                    <CampoPerfil label="Rua" valor={dados.user.street} isEditing={isEditing} onChange={(v) => setDados({...dados, user: {...dados.user, street: v}})} />
-                    <CampoPerfil label="Número" valor={dados.user.number} isEditing={isEditing} onChange={(v) => setDados({...dados, user: {...dados.user, number: v}})} />
-
-                    {isEditing && (
-                      <>
-                        <div className="col-span-2 mt-4">
-                          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Segurança</h3>
-                        </div>
-                        <CampoPerfil 
-                          label="Senha Atual"
-                          valor={currentPassword}
-                          isEditing={isEditing}
-                          type="password"
-                          onChange={(v) => setCurrentPassword(v)}
-                        />
-                        <CampoPerfil 
-                          label="Nova Senha"
-                          valor={newPassword}
-                          isEditing={isEditing}
-                          type="password"
-                          onChange={(v) => setNewPassword(v)}
-                        />
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex gap-4 mt-10 border-t border-slate-50 pt-8">
-                  {isEditing ? (
-                    <>
-                      <button onClick={() => { setIsEditing(false); setCurrentPassword(''); setNewPassword(''); }} className="flex-1 py-3 bg-white border border-slate-200 text-slate-600 font-bold text-sm rounded-full hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
-                        <X size={16} /> Cancelar
-                      </button>
-                      <button onClick={handleSalvar} className="flex-1 py-3 bg-teal-600 text-white font-bold text-sm rounded-full hover:bg-teal-700 transition-all shadow-md flex items-center justify-center gap-2">
-                        {saving ? <Loader2 className="animate-spin" size={16} /> : <><Save size={16} /> Salvar Alterações</>}
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button onClick={() => setIsDeleteModalOpen(true)} className="flex-1 py-3 bg-red-600 text-white font-bold text-sm rounded-full hover:bg-red-700 transition-all flex items-center justify-center gap-2">
-                        <Trash2 size={16} /> Deletar Conta
-                      </button>
-                      <button onClick={() => setIsEditing(true)} className="flex-1 py-3 border border-slate-200 text-slate-600 font-bold text-sm rounded-full hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
-                        <Pencil size={16} /> Editar Informações
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </article>
+            <ProfissionalProfileForm
+              dados={dados}
+              setDados={setDados}
+              isEditing={isEditing}
+              setIsEditing={setIsEditing}
+              setIsDeleteModalOpen={setIsDeleteModalOpen}
+              isSaving={saving}
+              onSave={handleSalvar}
+              onCancel={() => { setIsEditing(false); setCurrentPassword(''); setNewPassword(''); }}
+              currentPassword={currentPassword}
+              setCurrentPassword={setCurrentPassword}
+              newPassword={newPassword}
+              setNewPassword={setNewPassword}
+              fileInputRef={fileInputRef}
+              onFotoChange={handleFotoChange}
+              maskCPF={maskCPF}
+              maskPhone={maskPhone}
+              opcoesGenero={opcoesGenero}
+              estrelasCalculadas={estrelasCalculadas}
+            />
 
             <aside className={`w-[400px] flex flex-col gap-6 sticky top-0 transition-opacity ${isEditing ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
               <SideCard title="Plano de Impulsionamento" icon={<Star className="text-emerald-500" />}>
-                <div className="bg-gradient-to-br from-teal-500 to-emerald-400 rounded-3xl p-6 text-white mb-4 text-left shadow-lg">
-                  <p className="text-xl font-bold mb-1">Impulso Profissional</p>
-                  <p className="text-xs opacity-90 mb-4">Apareça no topo das buscas dos pacientes.</p>
-                  <p className="text-3xl font-black">R$ 29<span className="text-sm font-normal">/mês</span></p>
-                </div>
-                <div className="flex flex-col gap-2">
-                   <button className="w-full py-3 bg-emerald-500 text-white font-bold text-xs rounded-xl hover:bg-emerald-600 transition-colors">
-                    Ativar Destaque
-                  </button>
-                  <button className="w-full py-3 bg-white border border-slate-200 text-slate-600 font-bold text-xs rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">
-                    <Settings size={16} /> Gerenciar Assinatura
-                  </button>
-                </div>
+                {dados.isPromoted ? (
+                  <div className="bg-emerald-600 rounded-3xl p-6 text-white text-left shadow-lg">
+                    <p className="text-sm font-bold">Impulso Ativo</p>
+                    <p className="text-xs opacity-90 mb-4">Seu perfil está em destaque até:</p>
+                    <p className="text-lg font-black">
+                      {dados.promotionEndsAt ? new Date(dados.promotionEndsAt).toLocaleDateString('pt-BR') : '—'}
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="bg-gradient-to-br from-teal-500 to-emerald-400 rounded-3xl p-6 text-white mb-4 text-left shadow-lg">
+                      <p className="text-xl font-bold mb-1">Impulso Profissional</p>
+                      <p className="text-xs opacity-90 mb-4">Apareça no topo das buscas dos pacientes.</p>
+                      <p className="text-3xl font-black">R$ 29<span className="text-sm font-normal">/mês</span></p>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <button 
+                        onClick={() => navigate('/impulsionamento')}
+                        className="w-full py-3 bg-emerald-500 text-white font-bold text-xs rounded-xl hover:bg-emerald-600 transition-colors"
+                      >
+                        Ativar Destaque
+                      </button>
+                    </div>
+                  </>
+                )}
               </SideCard>
             </aside>
           </div>

@@ -29,6 +29,8 @@ const Estatisticas = lazy(() => import('./pages/Estatisticas.tsx'));
 const TelaInicialProfissional = lazy(() => import('./pages/TelaInicialProfissional.tsx'));
 const Chat = lazy(() => import('./pages/Chat.tsx'));
 const Planos = lazy(() => import('./pages/Planos.tsx'));
+const Pagamento = lazy(() => import('./pages/Pagamento.tsx'));
+const Impulsionamento = lazy(() => import('./pages/Impulsionamento.tsx'));
 
 function App() {
   return (
@@ -67,8 +69,6 @@ function App() {
           <Route path='/cadastro/cliente' element={<CadastroCliente />} />
           <Route path='/cadastro/profissional' element={<CadastroProfissional />} />
           
-          {/*Rota pública por enquanto. Mudar para private depois*/}
-          <Route path='/planos' element={<Planos />} />
 
           {/* Private Routes */}
           <Route element={<ProtectedRoute />}>
@@ -95,6 +95,9 @@ function App() {
             <Route path='/match' element={<QuestionarioMatch />} />
             <Route path='/agenda' element={<Agenda />} />
             <Route path='/chat' element={<Chat />} />
+            <Route path='/pagamento' element={<Pagamento />} />
+            <Route path='/impulsionamento' element={<Impulsionamento />} />
+            <Route path='/planos' element={<Planos />} />
           </Route>
         </Routes>
       </Suspense>
