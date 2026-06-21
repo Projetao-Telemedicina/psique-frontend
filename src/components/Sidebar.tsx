@@ -42,7 +42,6 @@ const Icons = {
 
 const Sidebar: React.FC<SidebarProps> = ({ role, itemAtivo, atendimentoAtivo = false }) => {
   const navigate = useNavigate();
-
   const { logout, token } = useAuth();
   const [isOnline, setIsOnline] = useState<boolean>(atendimentoAtivo);
 
@@ -59,7 +58,6 @@ const Sidebar: React.FC<SidebarProps> = ({ role, itemAtivo, atendimentoAtivo = f
     setIsOnline(nextStatus);
 
     try {
-      // Validação de segurança básica antes do disparo da requisição
       if (!token) {
         throw new Error('Token de autenticação não encontrado no estado global.');
       }
@@ -148,35 +146,17 @@ const Sidebar: React.FC<SidebarProps> = ({ role, itemAtivo, atendimentoAtivo = f
         />
       </div>
 
-
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-
         {/* --- Navegação --- */}
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '0 15px' }}>
           {menuItems.map((item) => {
             const isAtivo = item.id === itemAtivo;
-            const isPerfilEspecial = item.id === 'perfil' && role !== 'administrador';
 
             return (
               <button
                 key={item.id}
                 onClick={() => navigate(item.path)}
-                style={isPerfilEspecial ? {
-                  width: '207px',
-                  height: '45px',
-                  borderRadius: '99px',
-                  border: '1px solid #A7A7A7',
-                  background: '#ECECEC',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  padding: '0 12px',
-                  margin: '10px auto 0 0',
-                  color: isAtivo ? '#1E293B' : '#64748B',
-                  fontSize: '13px',
-                  fontWeight: isAtivo ? '600' : '400',
-                  cursor: 'pointer',
-                } : {
+                style={{
                   width: '100%',
                   display: 'flex',
                   alignItems: 'center',

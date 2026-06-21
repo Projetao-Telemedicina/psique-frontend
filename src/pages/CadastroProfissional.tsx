@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import HeroSection from '../components/HeroSection.js';
 import { ChevronLeft, EyeOff, Eye, CloudUpload, FileCheck } from 'lucide-react';
-import { toast } from "react-hot-toast";
 import { useAuth } from "../components/AuthContext";
+import { toast } from 'react-hot-toast';
 
 function CadastroProfissional() {
     const { login, logout } = useAuth();
@@ -46,12 +46,12 @@ function CadastroProfissional() {
         }
 
         if (formData.password !== formData.confirmPassword) {
-            alert("As senhas não coincidem!");
+            toast.error("As senhas não coincidem!");
             return;
         }
 
         if (!documentFile) {
-            alert("Por favor, anexe o seu documento de validação.");
+            toast.error("Por favor, anexe o seu documento de validação.");
             return;
         }
 
