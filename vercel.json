@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://psique-backend-x82n.onrender.com/$1"
+      "destination": "https://psique-backend.onrender.com/$1"
     },
     {
       "source": "/(.*)",
