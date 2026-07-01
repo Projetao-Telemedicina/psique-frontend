@@ -64,7 +64,7 @@ function CadastroProfissional() {
             ...userData,
             cpf: userData.cpf.replace(/[^\d]+/g, ''),
             street: "Não informado",
-            number: "SN",
+            number: "45",
             professionalProfile: {
                 crp: crp,
                 specialty: "Geral",
